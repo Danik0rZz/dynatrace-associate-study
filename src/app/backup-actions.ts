@@ -1,4 +1,5 @@
 import { applyBackup, backupFileName, BackupError, collectBackup, parseBackup, summarizeBackup } from '../lib/backup'
+import { alertDialog, confirmDialog } from '../lib/dialogs'
 
 /** Descarga un JSON con todo lo que la app guarda en este navegador. */
 export const exportProgress = (): void => {
@@ -14,20 +15,25 @@ export const exportProgress = (): void => {
     link.remove()
     window.setTimeout(() => URL.revokeObjectURL(url), 1000)
   } catch {
-    window.alert('No se ha podido exportar el progreso en este navegador.')
+    void alertDialog({ title: 'No se ha podido exportar', message: 'No se ha podido exportar el progreso en este navegador.' })
   }
 }
 
 /** Restaura una copia tras confirmar con el usuario y recarga la app. */
-export const importProgress = async (file: File): Promise<void> => {
+export const importProgress = async (file: Pick<File, 'text'>, reload: () => void = () => window.location.reload()): Promise<void> => {
   try {
     const backup = parseBackup(await file.text())
     const { answered, attempts } = summarizeBackup(backup)
     const date = new Date(backup.exportedAt).toLocaleString('es-ES')
-    if (!window.confirm(`Se sustituirá el progreso de este navegador por la copia del ${date} (${answered} preguntas respondidas, ${attempts} intentos). ¿Continuar?`)) return
+    const accepted = await confirmDialog({
+      title: '¿Restaurar esta copia?',
+      message: `Se sustituirá el progreso de este navegador por la copia del ${date} (${answered} preguntas respondidas, ${attempts} intentos).`,
+      confirmLabel: 'Restaurar copia',
+    })
+    if (!accepted) return
     applyBackup(window.localStorage, backup)
-    window.location.reload()
+    reload()
   } catch (error) {
-    window.alert(error instanceof BackupError ? error.message : 'No se ha podido leer el fichero.')
+    await alertDialog({ title: 'No se ha podido importar', message: error instanceof BackupError ? error.message : 'No se ha podido leer el fichero.' })
   }
 }
