@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 
 import { questionIndex, questionIndexByModule, questionMetaById } from '../data/question-catalog'
 import { loadedQuestion, loadQuestions, questionsLoaded } from '../data/question-loader'
 import type { Question } from '../data/types'
+import { customQuizIds, type CustomFilters } from '../lib/custom-quiz'
 import { questionIdsForSection, sectionTitle } from '../lib/guide-links'
 import { appendMockHistory, buildMockHistoryEntry } from '../lib/mock-history'
 import { clearSavedMock, loadSavedMock, parseSavedMock, saveMock, secondsUntil, type SavedMock } from '../lib/mock-session'
@@ -143,6 +144,12 @@ export function useStudySession(progress: ProgressState, setProgress: Dispatch<S
     const ids = questionIdsForSection(moduleId, sectionId)
     if (ids.length) start('section', fullBankIds(ids.map((id) => ({ id }))), `Apartado · ${sectionTitle(moduleId, sectionId)}`, moduleId, sectionId)
   }
+  /** Quiz a medida: la selección sale del catálogo y solo se descargan los bloques de las preguntas elegidas. */
+  const startCustom = (filters: CustomFilters, title: string) => {
+    const ids = customQuizIds(filters, progress, loadServed())
+    const moduleId = filters.modules.length === 1 ? filters.modules[0] : undefined
+    if (ids.length) start('custom', ids, title, moduleId, moduleId ? filters.section ?? undefined : undefined)
+  }
   const retry = (ids: string[]) => {
     if (ids.length) start('review', fullBankIds(ids.map((id) => ({ id }))), 'Repetir fallos')
   }
@@ -268,7 +275,7 @@ export function useStudySession(progress: ProgressState, setProgress: Dispatch<S
   return {
     session, index, answers, confidence, confidenceByQuestion, feedbackQuestionId, done, secondsLeft, flagged, currentQuestion,
     mockInProgress, reviewing, savedMock, preparing,
-    start, close, retryPreparing, startModuleQuiz, startMock, startReview, startSection, retry, resumeMock, discardSavedMock,
+    start, close, retryPreparing, startModuleQuiz, startMock, startReview, startSection, startCustom, retry, resumeMock, discardSavedMock,
     toggleAnswer, setQuestionConfidence, submit, next, back, jump, toggleFlag, openReview, closeReview, complete,
   }
 }

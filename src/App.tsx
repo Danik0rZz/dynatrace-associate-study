@@ -15,12 +15,14 @@ import { Disclaimer } from './components/Disclaimer'
 import { MobileHeader, MobileMenu } from './components/MobileMenu'
 import { ResumeMockPanel } from './components/ResumeMockPanel'
 import { SessionPreparing } from './components/SessionPreparing'
+import { applyRouteFilters, CUSTOM_QUIZ_KEY, DEFAULT_FILTERS, sanitizeFilters, type CustomFilters } from './lib/custom-quiz'
 import { StorageWarning } from './components/StorageWarning'
 import { modulesWithQuestions, questionIndex, questionMetaById, totalQuestions } from './data/question-catalog'
 import { loadSavedMock } from './lib/mock-session'
 import { guideRefFor, type GuideRef } from './lib/guide-links'
 import { continueModule, LAST_MODULE_KEY } from './lib/route'
 import { dueQuestionIds, latestAttempt, loadProgress, saveProgress, type ProgressState } from './lib/progress'
+import { CustomQuizView } from './views/CustomQuizView'
 import { ErrorHistoryView } from './views/ErrorHistoryView'
 import { GlossaryView } from './views/GlossaryView'
 import { HomeView } from './views/HomeView'
@@ -46,6 +48,10 @@ function App() {
   const [lastModuleId, setLastModuleId] = useStoredState<string | null>(LAST_MODULE_KEY, null)
   const [practiceDone, setPracticeDone] = useStoredState<string[]>('dynatrace-associate-practices-v1', [])
   const [glossarySearch, setGlossarySearch] = useState('')
+  // Filtros del quiz a medida: viajan en la copia de seguridad, así que se validan siempre al leerlos.
+  const [storedCustomFilters, setStoredCustomFilters] = useStoredState<unknown>(CUSTOM_QUIZ_KEY, DEFAULT_FILTERS)
+  const customFilters = sanitizeFilters(storedCustomFilters)
+  const setCustomFilters = (next: CustomFilters) => setStoredCustomFilters(next)
   const [guide, setGuide] = useState<GuideRef | null>(null)
   const [focusRequest, setFocusRequest] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -90,6 +96,8 @@ function App() {
   const onRouteChange = (next: Route) => {
     if (next.view !== 'quiz' && next.view !== 'mock') study.close()
     if (next.moduleId) setSelectedModuleId(next.moduleId)
+    // Una ruta #/quiz/medida?… rellena la configuración con sus parámetros (sobre los filtros guardados).
+    if (next.view === 'custom' && next.filters) setStoredCustomFilters((current: unknown) => applyRouteFilters(sanitizeFilters(current), next.filters ?? {}))
     if (next.view === 'module' && next.moduleId) setLastModuleId(next.moduleId)
     setPendingAnchor(next.sectionId ?? null)
     if (!next.sectionId) scrollToTop()
@@ -107,6 +115,12 @@ function App() {
   const view = route.view
   const [selectedModuleId, setSelectedModuleId] = useState(route.moduleId ?? 'platform')
   const [pendingAnchor, setPendingAnchor] = useState<string | null>(route.sectionId ?? null)
+  // Lo mismo al abrir la app directamente en #/quiz/medida?…
+  const initialFilters = useRef(route.view === 'custom' ? route.filters : undefined)
+  useEffect(() => {
+    const fromRoute = initialFilters.current
+    if (fromRoute) setStoredCustomFilters((current: unknown) => applyRouteFilters(sanitizeFilters(current), fromRoute))
+  }, [setStoredCustomFilters])
 
   const study = useStudySession(progress, setProgress, (mode) => {
     setGuide(null)
@@ -240,12 +254,13 @@ function App() {
         <div className={`content-wrap ${view === 'map' ? 'content-wrap-wide' : ''}`}>
           {view === 'home' && <HomeView modules={modulesWithQuestions} progress={progress} continueTarget={continueTarget} overallPercentage={overallPercentage} overallScore={overallScore} attemptedQuestionCount={attemptedQuestionCount} onStart={() => openModule(continueTarget.id)} onMap={() => navigate('map')} onMock={startMock} onOpenModule={openModule} />}
           {view === 'map' && <ErrorBoundary fallback={(retry) => <div className="loading-state" role="alert">No se ha podido cargar el mapa. Comprueba la conexión y <button type="button" className="text-button" onClick={retry}>vuelve a intentarlo</button>, o recarga la página.</div>}><Suspense fallback={<p className="loading-state" role="status">Cargando el mapa…</p>}><MapView progress={progress} colorMode={resolvedTheme} onOpenModule={openModule} onQuickQuiz={(id) => startModuleQuiz('quick', id)} onFullQuiz={(id) => startModuleQuiz('full', id)} onPractice={openPractices} /></Suspense></ErrorBoundary>}
-          {view === 'module' && <ModuleView module={selectedModule} progress={progress} onOpenModule={openModule} onOpenSection={(sectionId) => goToSection(selectedModule.id, sectionId)} onPracticeSection={study.startSection} onQuick={() => startModuleQuiz('quick')} onFull={() => startModuleQuiz('full')} onPractice={() => openPractices(selectedModule.id)} />}
+          {view === 'module' && <ModuleView module={selectedModule} progress={progress} onOpenModule={openModule} onOpenSection={(sectionId) => goToSection(selectedModule.id, sectionId)} onPracticeSection={study.startSection} onQuick={() => startModuleQuiz('quick')} onFull={() => startModuleQuiz('full')} onPractice={() => openPractices(selectedModule.id)} onCustom={() => go({ view: 'custom', filters: { modules: [selectedModule.id] } })} />}
           {inQuiz && !session && study.preparing && <SessionPreparing preparing={study.preparing} onRetry={study.retryPreparing} onHome={() => navigate('home')} />}
           {view === 'mock' && !session && !study.preparing && study.savedMock && <ResumeMockPanel mock={study.savedMock} discardLabel="Descartar y empezar uno nuevo" onResume={study.resumeMock} onDiscard={() => { study.discardSavedMock(); study.startMock() }} />}
           {inQuiz && session && !study.done && study.reviewing && <MockReviewView session={session} answers={study.answers} flagged={study.flagged} secondsLeft={study.secondsLeft} onJump={study.jump} onBack={study.closeReview} onConfirm={study.complete} />}
           {inQuiz && session && currentQuestion && !study.done && !study.reviewing && <QuizView session={session} question={currentQuestion} index={study.index} selected={study.answers[currentQuestion.id] ?? []} confidence={session.mode === 'mock' ? study.confidenceByQuestion[currentQuestion.id] ?? 3 : study.confidence} flagged={study.flagged.includes(currentQuestion.id)} secondsLeft={study.secondsLeft} feedbackVisible={study.feedbackQuestionId === currentQuestion.id} onToggleAnswer={(optionId) => study.toggleAnswer(currentQuestion, optionId)} onConfidence={(value) => study.setQuestionConfidence(currentQuestion, value)} onSubmit={study.submit} onNext={study.next} onToggleFlag={() => study.toggleFlag(currentQuestion.id)} onOpenGuide={() => openGuide(currentQuestion)} onBack={study.back} onJump={study.jump} onReview={study.openReview} />}
           {inQuiz && session && study.done && <SessionResult session={session} answers={study.answers} flagged={study.flagged} onHome={() => navigate('home')} onReview={() => dueQuestionIds(progress, questionIndex).length ? study.startReview() : navigate('review')} onRetry={study.retry} onOpenGuide={setGuide} onModule={() => session.moduleId && session.sectionId ? goToSection(session.moduleId, session.sectionId) : session.moduleId ? openModule(session.moduleId) : navigate('home')} />}
+          {view === 'custom' && <CustomQuizView filters={customFilters} progress={progress} onChange={setCustomFilters} onStart={study.startCustom} />}
           {view === 'review' && !session && <ReviewView progress={progress} onStart={study.startReview} onOpenModule={openModule} />}
           {view === 'errors' && <ErrorHistoryView progress={progress} onOpenModule={openModule} onOpenGuide={openGuide} />}
           {view === 'practice' && <PracticeView selectedModuleId={route.moduleId ?? ''} done={practiceDone} onToggle={togglePractice} onOpenModule={openModule} />}

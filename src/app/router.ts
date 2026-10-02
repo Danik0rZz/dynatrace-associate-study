@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { hasPrecisionSheet, sectionIndexEntry } from '../data/guide-index'
 import { modulesWithQuestions } from '../data/question-catalog'
+import { formatFilterParams, parseFilterParams, type CustomFilters } from '../lib/custom-quiz'
 import { PRECISION_SECTION } from '../lib/guide-links'
 import type { View } from './types'
 
@@ -13,7 +14,8 @@ import type { View } from './types'
  * | `#/`                         | inicio                             |
  * | `#/<bloque>`                 | bloque                             |
  * | `#/<bloque>/guia/<apartado>` | bloque, desplazado al apartado     |
- * | `#/quiz`                     | sesión de preguntas (quiz, banco, apartado, repaso) |
+ * | `#/quiz`                     | sesión de preguntas (quiz, banco, apartado, repaso, a medida) |
+ * | `#/quiz/medida[?…]`          | configuración del quiz a medida (parámetros opcionales: ver lib/custom-quiz.ts) |
  * | `#/simulacro`                | simulacro                          |
  * | `#/repaso`                   | repaso adaptativo                  |
  * | `#/errores`                  | historial de errores               |
@@ -22,8 +24,11 @@ import type { View } from './types'
  * | `#/mapa`                     | mapa de estudio                    |
  * | `#/buscar`                   | búsqueda en la guía y el glosario  |
  * | `#/estadisticas`             | historial de simulacros            |
+ *
+ * Solo `#/quiz/medida` usa parámetros (`?bloques=…&dificultad=…`); en cualquier otra ruta se ignoran. Un parámetro
+ * inválido también se ignora: la ruta sigue siendo la configuración, con el resto de filtros.
  */
-export type Route = { view: View; moduleId?: string; sectionId?: string }
+export type Route = { view: View; moduleId?: string; sectionId?: string; filters?: Partial<CustomFilters> }
 
 export const HOME: Route = { view: 'home' }
 
@@ -40,7 +45,8 @@ export const isRouteHash = (hash: string): boolean => hash === '' || hash === '#
 /** Interpreta un hash. Devuelve `null` si es una ruta desconocida (bloque, apartado o pantalla inexistentes). */
 export const parseRoute = (hash: string): Route | null => {
   if (!isRouteHash(hash)) return null
-  const segments = hash.replace(/^#\/?/, '').split('/').filter(Boolean).map((segment) => {
+  const [path, query = ''] = hash.replace(/^#\/?/, '').split('?', 2)
+  const segments = path.split('/').filter(Boolean).map((segment) => {
     try {
       return decodeURIComponent(segment)
     } catch {
@@ -51,6 +57,11 @@ export const parseRoute = (hash: string): Route | null => {
   const [first, second, third, ...rest] = segments
   if (rest.length) return null
   const view = BY_SEGMENT[first]
+  if (view === 'quiz' && second === 'medida') {
+    if (third !== undefined) return null
+    const filters = parseFilterParams(query)
+    return Object.keys(filters).length ? { view: 'custom', filters } : { view: 'custom' }
+  }
   if (view === 'practice') {
     if (third !== undefined) return null
     if (second === undefined) return { view }
@@ -66,6 +77,10 @@ export const parseRoute = (hash: string): Route | null => {
 export const formatRoute = (route: Route): string => {
   if (route.view === 'module' && route.moduleId) return `#/${route.moduleId}${route.sectionId ? `/guia/${encodeURIComponent(route.sectionId)}` : ''}`
   if (route.view === 'practice' && route.moduleId) return `#/practicas/${route.moduleId}`
+  if (route.view === 'custom') {
+    const query = route.filters ? formatFilterParams(route.filters) : ''
+    return `#/quiz/medida${query ? `?${query}` : ''}`
+  }
   const segment = STATIC[route.view]
   return segment ? `#/${segment}` : '#/'
 }
