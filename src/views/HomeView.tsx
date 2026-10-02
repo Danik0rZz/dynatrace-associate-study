@@ -1,9 +1,12 @@
+import { useMediaQuery } from '../app/useMediaQuery'
+import { BackupTools } from '../components/BackupTools'
 import type { Module } from '../data/types'
 import { allQuestions } from '../data/questions'
 import { examProfile } from '../data/modules'
 import { type ProgressState, moduleCompletion } from '../lib/progress'
 
 export function HomeView({ modules: moduleList, progress, continueTarget: activeModule, overallPercentage, overallScore, attemptedQuestionCount, onStart, onMap, onMock, onOpenModule }: { modules: Module[]; progress: ProgressState; continueTarget: Module; overallPercentage: number; overallScore: number; attemptedQuestionCount: number; onStart: () => void; onMap: () => void; onMock: () => void; onOpenModule: (id: string) => void }) {
+  const mobile = useMediaQuery('(max-width: 780px)')
   return (
     <div className="page-stack">
       <section className="hero-grid">
@@ -31,6 +34,8 @@ export function HomeView({ modules: moduleList, progress, continueTarget: active
 
       <section className="section-heading"><div><p className="eyebrow">PUNTO DE PARTIDA</p><h2>Tu ruta, en una mirada</h2></div><button className="text-button" onClick={onMap}>Abrir mapa completo <span>↗</span></button></section>
       <div className="module-overview-grid">{moduleList.map((module) => <ModuleOverviewCard key={module.id} module={module} progress={progress} onOpen={() => onOpenModule(module.id)} />)}</div>
+      {/* En móvil la barra lateral no muestra la copia de seguridad: se ofrece aquí. */}
+      {mobile && <section className="home-backup content-panel" aria-labelledby="home-backup-title"><div><p className="eyebrow">COPIA DE SEGURIDAD</p><h2 id="home-backup-title">Guarda o recupera tu progreso</h2><p>El progreso vive en este navegador. Exporta una copia para no perderlo o importa una anterior.</p></div><BackupTools className="data-tools home-backup-tools" /></section>}
       <section className="cta-band"><div><p className="eyebrow">CUANDO QUIERAS MEDIRTE</p><h2>Un simulacro sin pistas.</h2><p>60 preguntas, feedback al final y revisión por dominio.</p></div><button className="button-dark" onClick={onMock}>Iniciar simulacro <span>→</span></button></section>
     </div>
   )

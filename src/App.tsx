@@ -195,7 +195,7 @@ function App() {
   return (
     <>
     {/* Con un diálogo abierto, el resto de la app queda inerte (ni foco ni clics). */}
-    <div className={`app-shell ${collapsed ? 'sidebar-collapsed' : ''}`} inert={dialogOpen}>
+    <div className={`app-shell ${collapsed ? 'sidebar-collapsed' : ''} ${inQuiz && session && !study.done ? 'session-active' : ''}`} inert={dialogOpen}>
       <a className="skip-link" href="#main-content" onClick={skipToContent}>Saltar al contenido</a>
       <Sidebar view={view} collapsed={collapsed} routeModule={routeModule} onToggle={() => setSidebarCollapsed((collapsed) => !collapsed)} onNavigate={navigate} onStartMock={startMock} onOpenModule={openModule} />
 

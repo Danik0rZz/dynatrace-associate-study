@@ -1,6 +1,6 @@
 import { navItems } from '../app/labels'
 import type { View } from '../app/types'
-import { exportProgress, importProgress } from '../app/backup-actions'
+import { BackupTools } from './BackupTools'
 import type { Module } from '../data/types'
 
 type SidebarProps = {
@@ -41,13 +41,7 @@ export function Sidebar({ view, collapsed, routeModule, onToggle, onNavigate, on
           <span className="route-title">{routeModule.title}</span>
           <span className="route-arrow" aria-hidden="true">↗</span>
         </button>
-        <div className="data-tools">
-          <p className="sidebar-label">Tu progreso</p>
-          <div className="data-tools-row">
-            <button type="button" className="data-tool" onClick={exportProgress} title="Descargar una copia de tu progreso (JSON)" aria-label="Exportar progreso"><span aria-hidden="true">⤓</span><span className="data-tool-label">Exportar</span></button>
-            <label className="data-tool" title="Restaurar el progreso desde una copia"><span aria-hidden="true">⤒</span><span className="data-tool-label">Importar</span><input type="file" accept="application/json,.json" className="sr-only" aria-label="Importar progreso desde un fichero" onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ''; if (file) void importProgress(file) }} /></label>
-          </div>
-        </div>
+        <BackupTools />
         <p className="sidebar-note">Todo el contenido enlaza con documentación oficial para poder verificar cada decisión.</p>
       </div>
     </aside>
