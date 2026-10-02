@@ -36,6 +36,10 @@ export type StudyPhase = {
   color: string
   tint: string
   line: string
+  /** Texto con el color de la fase (título, píldora y etiqueta del nodo): ≥ 4,5:1 en los dos temas. */
+  text: string
+  /** Fondo de la etiqueta de fase con texto blanco (vista «Ruta curricular»). */
+  badge: string
 }
 
 export const studyPhases: StudyPhase[] = [
@@ -49,6 +53,8 @@ export const studyPhases: StudyPhase[] = [
     color: 'var(--map-phase-1)',
     tint: 'var(--map-phase-1-tint)',
     line: 'var(--map-phase-1-line)',
+    text: 'var(--map-phase-1-text)',
+    badge: 'var(--map-phase-1-badge)',
   },
   {
     id: 'storage-dql',
@@ -60,6 +66,8 @@ export const studyPhases: StudyPhase[] = [
     color: 'var(--map-phase-2)',
     tint: 'var(--map-phase-2-tint)',
     line: 'var(--map-phase-2-line)',
+    text: 'var(--map-phase-2-text)',
+    badge: 'var(--map-phase-2-badge)',
   },
   {
     id: 'analytics-dem',
@@ -71,6 +79,8 @@ export const studyPhases: StudyPhase[] = [
     color: 'var(--map-phase-3)',
     tint: 'var(--map-phase-3-tint)',
     line: 'var(--map-phase-3-line)',
+    text: 'var(--map-phase-3-text)',
+    badge: 'var(--map-phase-3-badge)',
   },
   {
     id: 'security-action',
@@ -82,6 +92,8 @@ export const studyPhases: StudyPhase[] = [
     color: 'var(--map-phase-4)',
     tint: 'var(--map-phase-4-tint)',
     line: 'var(--map-phase-4-line)',
+    text: 'var(--map-phase-4-text)',
+    badge: 'var(--map-phase-4-badge)',
   },
 ]
 
@@ -111,13 +123,14 @@ type ModuleNodeData = {
   phaseId: string
   phaseName: string
   phaseColor: string
+  phaseText: string
   isSelected: boolean
   onSelect: (id: string) => void
   onOpen: (id: string) => void
 }
 
 function ModuleCustomNode({ data }: NodeProps<Node<ModuleNodeData>>) {
-  const { module, studyOrder, completion, score, attempted, totalQuestions, phaseName, phaseColor, isSelected, onSelect, onOpen } = data
+  const { module, studyOrder, completion, score, attempted, totalQuestions, phaseName, phaseColor, phaseText, isSelected, onSelect, onOpen } = data
   const isMastered = completion >= 80 && score >= 80
   const isInProgress = completion > 0 && !isMastered
   const statusLabel = isMastered ? 'Dominado' : isInProgress ? 'En progreso' : 'Pendiente'
@@ -144,7 +157,7 @@ function ModuleCustomNode({ data }: NodeProps<Node<ModuleNodeData>>) {
       <div className="node-content">
         <div className="node-header">
           <span className="node-order-pill">{`M${String(studyOrder).padStart(2, '0')}`}</span>
-          <span className="node-phase-tag" style={{ color: phaseColor }}>
+          <span className="node-phase-tag" style={{ color: phaseText }}>
             {phaseName}
           </span>
           <span className={`node-badge ${statusClass}`}>
@@ -201,6 +214,7 @@ type PhaseHeaderData = {
   color: string
   tint: string
   line: string
+  text: string
   attempted: number
   totalQuestions: number
   completionPct: number
@@ -217,6 +231,7 @@ function PhaseHeaderCustomNode({ data }: NodeProps<Node<PhaseHeaderData>>) {
     color,
     tint,
     line,
+    text,
     attempted,
     totalQuestions,
     completionPct,
@@ -240,7 +255,7 @@ function PhaseHeaderCustomNode({ data }: NodeProps<Node<PhaseHeaderData>>) {
         <div className="phase-header-node-badge-row">
           <span
             className="phase-header-node-pill"
-            style={{ color, borderColor: line, background: tint }}
+            style={{ color: text, borderColor: line, background: tint }}
           >
             FASE {order}
           </span>
@@ -248,7 +263,7 @@ function PhaseHeaderCustomNode({ data }: NodeProps<Node<PhaseHeaderData>>) {
             {attempted}/{totalQuestions} ({completionPct}%)
           </span>
         </div>
-        <h4 className="phase-header-node-title" style={{ color: color }}>
+        <h4 className="phase-header-node-title" style={{ color: text }}>
           {title}
         </h4>
         <p className="phase-header-node-sub">{subtitle}</p>
@@ -367,6 +382,7 @@ export function MapView({ progress, colorMode = 'light', onOpenModule, onQuickQu
           color: phase.color,
           tint: phase.tint,
           line: phase.line,
+          text: phase.text,
           attempted: phaseAttempted,
           totalQuestions: phaseQuestionIds.length,
           completionPct,
@@ -403,6 +419,7 @@ export function MapView({ progress, colorMode = 'light', onOpenModule, onQuickQu
           phaseId: phase.id,
           phaseName: phase.shortName,
           phaseColor: phase.color,
+          phaseText: phase.text,
           isSelected: selectedModuleId === module.id,
           onSelect: handleSelectModule,
           onOpen: onOpenModule,
@@ -917,7 +934,7 @@ export function MapView({ progress, colorMode = 'light', onOpenModule, onQuickQu
                 <section key={phase.id} className="roadmap-phase-card">
                   <header className="phase-card-header" style={{ borderLeftColor: phase.color }}>
                     <div className="phase-header-left">
-                      <span className="phase-tag" style={{ background: phase.color }}>
+                      <span className="phase-tag" style={{ background: phase.badge }}>
                         FASE {phase.order}
                       </span>
                       <h2>{phase.name}</h2>

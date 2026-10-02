@@ -67,6 +67,13 @@ export const CONTRAST_PAIRS: ContrastPair[] = [
   // Mapa: etiquetas de las aristas (sobre su píldora), texto de la leyenda y del lienzo.
   text('etiqueta de arista / píldora', '--react-graphic', '--paper'),
   text('leyenda del mapa', '--ink-soft', '--canvas-surface'),
+  // Fases del mapa: título y píldora del encabezado, etiqueta de fase de cada nodo y etiqueta de la «Ruta curricular».
+  ...[1, 2, 3, 4].flatMap((n) => [
+    text(`fase ${n}: título del encabezado`, `--map-phase-${n}-text`, '--paper'),
+    text(`fase ${n}: píldora «FASE ${n}»`, `--map-phase-${n}-text`, [`--map-phase-${n}-tint`, '--paper']),
+    text(`fase ${n}: etiqueta de fase del nodo`, `--map-phase-${n}-text`, '--paper'),
+    text(`fase ${n}: etiqueta de la ruta curricular`, '--on-accent', `--map-phase-${n}-badge`),
+  ]),
   text('ayuda del lienzo', '--muted', '--canvas-surface'),
   // Elementos gráficos sin texto (≥ 3:1): contorno de los puntos de estado de la leyenda.
   focus('punto «Dominado» de la leyenda', '--legend-mastered-line', '--canvas-surface'),

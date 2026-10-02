@@ -171,6 +171,16 @@
   --map-phase-4: #1f4854;
   --map-phase-4-tint: #1f485414;
   --map-phase-4-line: #1f485440;
+  /* Texto con el color de la fase (≥ 4,5:1) y fondo de la etiqueta blanca de la «Ruta curricular».
+     Solo la fase 2 cambia respecto al color de línea: #11a899 sobre blanco daba ≈ 3:1. */
+  --map-phase-1-text: #087d72;
+  --map-phase-2-text: #0b7d71;
+  --map-phase-3-text: #1c7a6f;
+  --map-phase-4-text: #1f4854;
+  --map-phase-1-badge: #087d72;
+  --map-phase-2-badge: #0b7d71;
+  --map-phase-3-badge: #1c7a6f;
+  --map-phase-4-badge: #1f4854;
   --map-edge-foundation: #087d72;
   --map-edge-grail: #11a899;
   --map-edge-dem: #2a9d8f;
@@ -298,6 +308,10 @@
     --map-phase-4: #9cc1cc;
     --map-phase-4-tint: #9cc1cc1f;
     --map-phase-4-line: #9cc1cc66;
+    --map-phase-1-text: #3fbcad;
+    --map-phase-2-text: #3fd0bf;
+    --map-phase-3-text: #5cc3b6;
+    --map-phase-4-text: #9cc1cc;
     --map-edge-foundation: #3fbcad;
     --map-edge-grail: #3fd0bf;
     --map-edge-dem: #5cc3b6;
@@ -420,6 +434,10 @@
   --map-phase-4: #9cc1cc;
   --map-phase-4-tint: #9cc1cc1f;
   --map-phase-4-line: #9cc1cc66;
+  --map-phase-1-text: #3fbcad;
+  --map-phase-2-text: #3fd0bf;
+  --map-phase-3-text: #5cc3b6;
+  --map-phase-4-text: #9cc1cc;
   --map-edge-foundation: #3fbcad;
   --map-edge-grail: #3fd0bf;
   --map-edge-dem: #5cc3b6;

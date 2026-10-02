@@ -7,7 +7,9 @@ export const parseColor = (value: string): Rgba => {
   const v = value.trim().toLowerCase()
   if (v.startsWith('#')) {
     const h = v.length === 4 ? [...v.slice(1)].map((c) => c + c).join('') : v.slice(1)
-    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16), 1]
+    // #rrggbbaa: el alfa de 8 dígitos cuenta (tintes translúcidos de las fases del mapa).
+    const alpha = h.length === 8 ? parseInt(h.slice(6, 8), 16) / 255 : 1
+    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16), alpha]
   }
   const parts = v.replace(/rgba?\(|\)/g, '').split(/[\s,/]+/).filter(Boolean).map(Number)
   return [parts[0], parts[1], parts[2], parts[3] ?? 1]
