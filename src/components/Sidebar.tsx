@@ -11,10 +11,12 @@ type SidebarProps = {
   onNavigate: (view: View) => void
   onStartMock: () => void
   onOpenModule: (moduleId: string) => void
+  /** Se llama tras exportar o elegir un fichero para importar (el menú móvil se cierra). */
+  onBackupAction?: () => void
 }
 
-/** Barra lateral fija: navegación, ruta actual y copia de seguridad del progreso. */
-export function Sidebar({ view, collapsed, routeModule, onToggle, onNavigate, onStartMock, onOpenModule }: SidebarProps) {
+/** Barra lateral fija: navegación, ruta actual y copia de seguridad del progreso. En móvil se muestra dentro del menú. */
+export function Sidebar({ view, collapsed, routeModule, onToggle, onNavigate, onStartMock, onOpenModule, onBackupAction }: SidebarProps) {
   return (
     <aside className="sidebar">
       <div className="brand-lockup">
@@ -41,7 +43,7 @@ export function Sidebar({ view, collapsed, routeModule, onToggle, onNavigate, on
           <span className="route-title">{routeModule.title}</span>
           <span className="route-arrow" aria-hidden="true">↗</span>
         </button>
-        <BackupTools />
+        <BackupTools onDone={onBackupAction} />
         <p className="sidebar-note">Todo el contenido enlaza con documentación oficial para poder verificar cada decisión.</p>
       </div>
     </aside>
