@@ -124,7 +124,7 @@ h3 { letter-spacing: -.025em; }
 .progress-card-copy span:last-child { font-size: 12px; color: #94b1ae; }
 .progress-card-footer { margin-top: 23px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.15); display: flex; justify-content: space-between; color: #8aa6a4; font-size: 11px; }
 .progress-card-footer strong { color: #e8f4f0; font-size: 14px; }
-.metric-strip { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 19px 0; }
+.metric-strip { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 19px 0; }
 .metric { display: flex; gap: 14px; align-items: baseline; padding: 0 22px; border-right: 1px solid var(--line); }
 .metric:first-child { padding-left: 0; }
 .metric:last-child { border-right: 0; }
@@ -886,6 +886,11 @@ h3 { letter-spacing: -.025em; }
 
 .search-field { min-width: 260px; border: 1px solid var(--line); background: #fff; display: flex; align-items: center; gap: 8px; padding: 0 12px; color: var(--muted); }
 .search-field input { width: 100%; border: 0; outline: 0; padding: 12px 0; color: var(--ink); background: transparent; font-size: 12px; }
+.glossary-filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch; }
+.filter-field { display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--paper); padding: 0 12px; color: var(--ink-soft); font-size: 12px; }
+.filter-field select { border: 0; padding: 12px 0; color: var(--ink); background: transparent; font-size: 12px; max-width: 260px; }
+.filter-field:focus-within { outline: 3px solid #0b5fa5; outline-offset: 2px; }
+.glossary-count { margin: 0; color: var(--ink-soft); font-size: 12px; }
 .glossary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .glossary-card { padding: 20px; border: 1px solid var(--line); background: #fff; min-height: 135px; }
 .glossary-card > div { display: flex; justify-content: space-between; gap: 8px; align-items: start; }
