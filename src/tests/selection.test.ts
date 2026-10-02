@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { allQuestions, questionsByModule } from '../data/questions'
-import { emptyProgress, type ProgressState } from '../lib/progress'
-import { adaptiveReviewIds, byFreshness, fullBankIds, mockExamIds, optionOrders, quickQuizIds, shuffle } from '../lib/selection'
+import { dueQuestionIds, emptyProgress, type ProgressState } from '../lib/progress'
+import { adaptiveReviewIds, byFreshness, fullBankIds, mockExamIds, optionOrders, quickQuizIds, REVIEW_SESSION_SIZE, shuffle } from '../lib/selection'
 
 const answered = (ids: string[], correct = true): ProgressState => {
   const progress = emptyProgress()
@@ -58,12 +58,25 @@ describe('selección aleatoria de preguntas', () => {
     expect(mockExamIds(allQuestions, emptyProgress()).join()).not.toBe(ids.join())
   })
 
-  it('el repaso adaptativo prioriza los fallos y varía el resto', () => {
+  it('el repaso adaptativo toma solo la cola de repaso y baraja su orden', () => {
     const failed = questionsByModule.platform.slice(0, 5).map((question) => question.id)
     const ids = adaptiveReviewIds(allQuestions, answered(failed, false))
-    failed.forEach((id) => expect(ids).toContain(id))
-    const again = adaptiveReviewIds(allQuestions, emptyProgress())
-    expect(again.join()).not.toBe(adaptiveReviewIds(allQuestions, emptyProgress()).join())
+    expect([...ids].sort()).toEqual([...failed].sort())
+    expect(adaptiveReviewIds(allQuestions, emptyProgress())).toEqual([])
+    const many = answered(questionsByModule.dql.slice(0, 20).map((question) => question.id), false)
+    const runs = new Set(Array.from({ length: 10 }, () => adaptiveReviewIds(allQuestions, many).join()))
+    expect(runs.size).toBeGreaterThan(1)
+  })
+
+  it('el contador de repaso coincide con la longitud de la cola', () => {
+    const failed = questionsByModule.security.slice(0, 30).map((question) => question.id)
+    const sure = questionsByModule.dql.slice(0, 10).map((question) => question.id)
+    const progress = answered(sure)
+    Object.assign(progress.attempts, answered(failed, false).attempts)
+    const counter = dueQuestionIds(progress, allQuestions).length
+    expect(counter).toBe(30)
+    expect(adaptiveReviewIds(allQuestions, progress, Infinity)).toHaveLength(counter)
+    expect(adaptiveReviewIds(allQuestions, progress)).toHaveLength(Math.min(REVIEW_SESSION_SIZE, counter))
   })
 
   it('el banco completo incluye todas las preguntas en orden variable', () => {

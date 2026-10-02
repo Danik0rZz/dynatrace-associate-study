@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { safeSetItem } from '../lib/safe-storage'
 
 /** Lee un JSON de localStorage sin romper si el almacenamiento no está disponible o el valor está dañado. */
 export const readStored = <T,>(key: string, fallback: T): T => {
@@ -10,12 +11,9 @@ export const readStored = <T,>(key: string, fallback: T): T => {
   }
 }
 
+/** Si no se puede guardar, el estado sigue en memoria y se muestra el aviso de almacenamiento. */
 export const writeStored = (key: string, value: unknown): void => {
-  try {
-    if (typeof window !== 'undefined') window.localStorage.setItem(key, JSON.stringify(value))
-  } catch {
-    /* almacenamiento no disponible: el estado sigue en memoria */
-  }
+  safeSetItem(key, JSON.stringify(value))
 }
 
 /** Estado de React que se guarda en localStorage. */

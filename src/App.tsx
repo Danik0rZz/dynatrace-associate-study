@@ -6,9 +6,10 @@ import { useStudySession } from './app/useStudySession'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { GuideDrawer } from './components/GuideDrawer'
 import { Sidebar } from './components/Sidebar'
+import { StorageWarning } from './components/StorageWarning'
 import { allQuestions, modulesWithQuestions } from './data/questions'
 import { guideRefFor, type GuideRef } from './lib/guide-links'
-import { latestAttempt, loadProgress, saveProgress, type ProgressState } from './lib/progress'
+import { dueQuestionIds, latestAttempt, loadProgress, saveProgress, type ProgressState } from './lib/progress'
 import { ErrorHistoryView } from './views/ErrorHistoryView'
 import { GlossaryView } from './views/GlossaryView'
 import { HomeView } from './views/HomeView'
@@ -33,7 +34,7 @@ function App() {
   const [guide, setGuide] = useState<GuideRef | null>(null)
   const [pendingAnchor, setPendingAnchor] = useState<string | null>(null)
 
-  useEffect(() => saveProgress(progress), [progress])
+  useEffect(() => { saveProgress(progress) }, [progress])
 
   const study = useStudySession(progress, setProgress, (mode) => {
     scrollToTop()
@@ -131,12 +132,13 @@ function App() {
           <div className="topbar-meta"><span className="status-pulse" aria-hidden="true" /> Progreso guardado localmente <span className="topbar-divider" aria-hidden="true" /> <span>{attemptedQuestionCount}/{allQuestions.length} revisadas</span></div>
         </header>
 
+        <StorageWarning />
         <div className={`content-wrap ${view === 'map' ? 'content-wrap-wide' : ''}`}>
           {view === 'home' && <HomeView modules={modulesWithQuestions} progress={progress} overallPercentage={overallPercentage} overallScore={overallScore} attemptedQuestionCount={attemptedQuestionCount} onStart={() => openModule('platform')} onMap={() => navigate('map')} onMock={study.startMock} onOpenModule={openModule} />}
           {view === 'map' && <ErrorBoundary fallback={(retry) => <div className="loading-state" role="alert">No se ha podido cargar el mapa. Comprueba la conexión y <button type="button" className="text-button" onClick={retry}>vuelve a intentarlo</button>, o recarga la página.</div>}><Suspense fallback={<p className="loading-state" role="status">Cargando el mapa…</p>}><MapView progress={progress} onOpenModule={openModule} onQuickQuiz={(id) => startModuleQuiz('quick', id)} onFullQuiz={(id) => startModuleQuiz('full', id)} onPractice={openPractices} /></Suspense></ErrorBoundary>}
           {view === 'module' && <ModuleView module={selectedModule} progress={progress} onOpenModule={openModule} onPracticeSection={study.startSection} onQuick={() => startModuleQuiz('quick')} onFull={() => startModuleQuiz('full')} onPractice={() => openPractices(selectedModule.id)} />}
           {inQuiz && session && currentQuestion && !study.done && <QuizView session={session} question={currentQuestion} index={study.index} selected={study.answers[currentQuestion.id] ?? []} confidence={session.mode === 'mock' ? study.confidenceByQuestion[currentQuestion.id] ?? 3 : study.confidence} flagged={study.flagged.includes(currentQuestion.id)} secondsLeft={study.secondsLeft} feedbackVisible={study.feedbackQuestionId === currentQuestion.id} onToggleAnswer={(optionId) => study.toggleAnswer(currentQuestion, optionId)} onConfidence={(value) => study.setQuestionConfidence(currentQuestion, value)} onSubmit={study.submit} onNext={study.next} onToggleFlag={() => study.toggleFlag(currentQuestion.id)} onOpenGuide={() => openGuide(currentQuestion)} onBack={study.back} onJump={study.jump} />}
-          {inQuiz && session && study.done && <SessionResult session={session} answers={study.answers} flagged={study.flagged} onHome={() => navigate('home')} onReview={study.startReview} onRetry={study.retry} onOpenGuide={setGuide} onModule={() => session.moduleId && session.sectionId ? goToSection(session.moduleId, session.sectionId) : session.moduleId ? openModule(session.moduleId) : navigate('home')} />}
+          {inQuiz && session && study.done && <SessionResult session={session} answers={study.answers} flagged={study.flagged} onHome={() => navigate('home')} onReview={() => dueQuestionIds(progress, allQuestions).length ? study.startReview() : navigate('review')} onRetry={study.retry} onOpenGuide={setGuide} onModule={() => session.moduleId && session.sectionId ? goToSection(session.moduleId, session.sectionId) : session.moduleId ? openModule(session.moduleId) : navigate('home')} />}
           {view === 'review' && !session && <ReviewView progress={progress} onStart={study.startReview} onOpenModule={openModule} />}
           {view === 'errors' && <ErrorHistoryView progress={progress} onOpenModule={openModule} onOpenGuide={openGuide} />}
           {view === 'practice' && <PracticeView selectedModuleId={selectedModuleId} done={practiceDone} onToggle={togglePractice} onOpenModule={openModule} />}

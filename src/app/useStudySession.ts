@@ -49,7 +49,10 @@ export function useStudySession(progress: ProgressState, setProgress: Dispatch<S
     start(mode, ids, `${mode === 'quick' ? 'Quiz rápido' : 'Banco completo'} · ${moduleTitle}`, moduleId)
   }
   const startMock = () => start('mock', mockExamIds(allQuestions, progress, loadServed()), 'Simulacro · 60 preguntas')
-  const startReview = () => start('review', adaptiveReviewIds(allQuestions, progress, loadServed(), 24), 'Repaso adaptativo')
+  const startReview = () => {
+    const ids = adaptiveReviewIds(allQuestions, progress)
+    if (ids.length) start('review', ids, 'Repaso adaptativo')
+  }
   const startSection = (moduleId: string, sectionId: string) => {
     const ids = questionIdsForSection(moduleId, sectionId)
     if (ids.length) start('section', fullBankIds(ids.map((id) => questionsById[id])), `Apartado · ${sectionTitle(moduleId, sectionId)}`, moduleId, sectionId)

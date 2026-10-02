@@ -834,6 +834,9 @@ h3 { letter-spacing: -.025em; }
 .review-principles li { display: flex; gap: 12px; align-items: center; color: var(--ink-soft); font-size: 12px; }
 .review-principles li b { color: var(--teal-dark); }
 .empty-state { color: var(--muted); font-size: 13px; line-height: 1.5; padding: 20px 0; }
+.button-primary:disabled { opacity: .55; cursor: not-allowed; }
+.storage-warning { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 0 0 16px; padding: 12px 18px; border-left: 4px solid var(--coral); background: var(--paper-soft); color: var(--ink); font-size: 13px; line-height: 1.5; }
+.storage-warning p { margin: 0; }
 .error-list { display: grid; gap: 12px; }
 .error-card { padding: 23px 25px; border: 1px solid #ead2cb; background: #fff; box-shadow: inset 4px 0 0 #df735a; }
 .error-card-top { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; }

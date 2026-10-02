@@ -6,10 +6,11 @@
  * claves a un JSON; importar = validar el JSON y sustituir esas claves.
  */
 
+import { PROGRESS_KEY } from './progress'
+
 export const STORAGE_PREFIX = 'dynatrace-associate'
 export const BACKUP_APP = 'dynatrace-associate-study-lab'
 export const BACKUP_VERSION = 1
-const PROGRESS_KEY = 'dynatrace-associate-progress-v3'
 
 export type Backup = {
   app: typeof BACKUP_APP
@@ -80,8 +81,24 @@ export const summarizeBackup = (backup: Backup): { answered: number; attempts: n
   return { answered: lists.filter((list) => list.length > 0).length, attempts: lists.reduce((sum, list) => sum + list.length, 0) }
 }
 
-/** Sustituye todo lo guardado por la app por el contenido de la copia. */
+/**
+ * Sustituye todo lo guardado por la app por el contenido de la copia. Si el navegador no admite la copia
+ * (cuota llena), restaura lo que había y lanza BackupError.
+ */
 export const applyBackup = (storage: KeyValueStore, backup: Backup): void => {
-  for (const key of ownKeys(storage)) storage.removeItem(key)
-  for (const [key, value] of Object.entries(backup.entries)) storage.setItem(key, value)
+  const previous = Object.fromEntries(ownKeys(storage).map((key) => [key, storage.getItem(key) ?? '']))
+  for (const key of Object.keys(previous)) storage.removeItem(key)
+  try {
+    for (const [key, value] of Object.entries(backup.entries)) storage.setItem(key, value)
+  } catch {
+    for (const key of ownKeys(storage)) storage.removeItem(key)
+    for (const [key, value] of Object.entries(previous)) {
+      try {
+        storage.setItem(key, value)
+      } catch {
+        /* sin espacio ni para lo anterior: se conserva lo que haya cabido */
+      }
+    }
+    throw new BackupError('No hay espacio suficiente en este navegador para restaurar la copia. Se ha mantenido el progreso anterior.')
+  }
 }
