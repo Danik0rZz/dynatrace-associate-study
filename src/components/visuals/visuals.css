@@ -89,7 +89,7 @@
 }
 
 /* Indicador en el índice de la lección */
-.chapter-index a.has-visual::after { content: ' ▶'; color: var(--teal); font-size: 8px; }
+.chapter-index a.has-visual .chapter-index-title::after { content: ' ▶'; color: var(--teal); font-size: 8px; }
 
 @media (max-width: 900px) {
   .sv { margin-left: 0; max-width: 100%; }

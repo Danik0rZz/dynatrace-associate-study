@@ -1096,6 +1096,14 @@ h3 { letter-spacing: -.025em; }
 .chapter-index { display: flex; flex-wrap: wrap; gap: 7px; padding: 17px 32px; border-bottom: 1px solid var(--line); background: var(--paper); }
 .chapter-index a { color: var(--teal-dark); background: var(--chapter-surface); padding: 7px 9px; text-decoration: none; font-size: 10px; font-weight: 700; }
 .chapter-index a:hover { background: var(--chapter-surface-2); }
+/* Progreso por apartado en el índice: texto (respondidas/total · % de acierto) y una barra decorativa. */
+.chapter-index a { display: inline-flex; flex-direction: column; justify-content: center; gap: 4px; }
+.chapter-index-progress { display: flex; align-items: center; gap: 6px; color: var(--ink-soft); font-size: 9px; font-weight: 700; }
+.chapter-index-bar { display: block; width: 34px; height: 3px; background: var(--line); }
+.chapter-index-bar span { display: block; height: 100%; background: var(--teal); }
+/* «Revisado <fecha>» bajo la entradilla del apartado. */
+.study-section-heading .section-reviewed { margin-top: 6px; color: var(--ink-soft); font-size: 11px; font-weight: 600; }
+.precision-facts-heading .section-reviewed { margin-top: 8px; font-size: 11px; }
 .study-sections { display: grid; gap: 0; }
 .study-section { padding: 31px 32px 34px; border-bottom: 1px solid var(--line); scroll-margin-top: 20px; }
 .study-section:last-child { border-bottom: 0; }
@@ -1258,6 +1266,7 @@ h3 { letter-spacing: -.025em; }
 .feedback-detail { display: flex; gap: 16px; flex-wrap: wrap; color: var(--ink-soft); font-size: 11px; }
 .feedback-context { display: flex; flex-wrap: wrap; gap: 7px 15px; color: var(--muted); font-size: 10px; line-height: 1.45; }
 .feedback-context b { color: var(--teal-dark); }
+.feedback-context + .feedback-detail { margin-top: 8px; }
 .distractor-review { border-top: 1px solid var(--distractor-line); margin-top: 14px; padding-top: 13px; }
 .distractor-review strong { font-size: 11px; }
 .distractor-review p { color: var(--ink-soft); font-size: 11px; margin: 8px 0 0; }
@@ -1697,6 +1706,8 @@ h3 { letter-spacing: -.025em; }
   .section-practice, .pager-top, .confidence-scale button, .quiz-aside-details > summary, .phase-chip, .canvas-toggle-btn,
   .inspector-btn, .inspector-btn-sub, .data-tool, select { min-height: 44px; }
   .chapter-index a, .study-section-source-link, .exam-links a, .source-mini a, .glossary-card button { display: flex; align-items: center; min-height: 44px; }
+  .chapter-index a { flex-direction: column; align-items: flex-start; justify-content: center; }
+  .chapter-index-progress { font-size: 12px; }
   .mastery-list label { display: flex; align-items: center; gap: 8px; min-height: 44px; }
   .search-result a { min-height: 44px; align-content: center; }
   /* «Marcar» amplía su zona táctil con un pseudo-elemento: así la fila de etiquetas no crece y la pregunta sigue cabiendo. */

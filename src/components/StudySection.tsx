@@ -1,4 +1,6 @@
+import { sectionReviewed } from '../data/guide-index'
 import { InlineText } from './InlineText'
+import { ReviewedDate } from './ReviewedDate'
 import { hasSectionVisual } from './visuals/index-ids'
 import { LazySectionVisual } from './visuals/LazySectionVisual'
 import type { PrecisionFact, PrecisionFactSheet, StudySection } from '../data/types'
@@ -13,7 +15,7 @@ function PracticeButton({ practiceCount, onPractice }: PracticeProps) {
 export function StudySectionView({ section, moduleId, practiceCount, onPractice, headingLevel = 'h3', anchor = true }: { section: StudySection; moduleId: string; headingLevel?: 'h2' | 'h3'; anchor?: boolean } & PracticeProps) {
   const Heading = headingLevel
   return <article className="study-section" id={anchor ? section.id : undefined}>
-    <div className="study-section-heading"><span className="section-marker">{section.title.split('.')[0]}</span><div><Heading><InlineText text={section.title.replace(/^\d+\.\s*/, '')} /></Heading><p><InlineText text={section.lead} /></p></div></div>
+    <div className="study-section-heading"><span className="section-marker">{section.title.split('.')[0]}</span><div><Heading><InlineText text={section.title.replace(/^\d+\.\s*/, '')} /></Heading><p><InlineText text={section.lead} /></p><ReviewedDate value={sectionReviewed(moduleId, section.id)} /></div></div>
     <div className="study-prose">{section.paragraphs.map((paragraph) => <p key={paragraph}><InlineText text={paragraph} /></p>)}</div>
     {hasSectionVisual(moduleId, section.id) && <LazySectionVisual moduleId={moduleId} sectionId={section.id} />}
     {section.bullets && <ul className="study-bullets">{section.bullets.map((bullet) => <li key={bullet}><InlineText text={bullet} /></li>)}</ul>}
@@ -25,10 +27,10 @@ export function StudySectionView({ section, moduleId, practiceCount, onPractice,
   </article>
 }
 
-export function PrecisionFactsView({ factSheet, rows, practiceCount, onPractice, anchor = true }: { factSheet: PrecisionFactSheet; rows?: PrecisionFact[]; anchor?: boolean } & PracticeProps) {
+export function PrecisionFactsView({ factSheet, moduleId, rows, practiceCount, onPractice, anchor = true }: { factSheet: PrecisionFactSheet; moduleId: string; rows?: PrecisionFact[]; anchor?: boolean } & PracticeProps) {
   const visibleRows = rows ?? factSheet.rows
   return <section className="precision-facts" id={anchor ? 'precision-facts' : undefined}>
-    <div className="precision-facts-heading"><div><p className="eyebrow">DATOS DE ALTA PRECISIÓN · MEMORIZA Y CONTRASTA</p><h3>{factSheet.title}</h3><p>{factSheet.intro}</p></div><span>{visibleRows.length} {visibleRows.length === 1 ? 'hecho' : 'hechos'}</span></div>
+    <div className="precision-facts-heading"><div><p className="eyebrow">DATOS DE ALTA PRECISIÓN · MEMORIZA Y CONTRASTA</p><h3>{factSheet.title}</h3><p>{factSheet.intro}</p><ReviewedDate value={sectionReviewed(moduleId, 'precision-facts')} /></div><span>{visibleRows.length} {visibleRows.length === 1 ? 'hecho' : 'hechos'}</span></div>
     <div className="precision-facts-table-wrap"><table className="precision-facts-table"><thead><tr><th>Área</th><th>Qué debes saber</th><th>Matiz que decide la respuesta</th><th>Fuente</th></tr></thead><tbody>{visibleRows.map((row) => <tr key={row.topic}><th scope="row">{row.topic}</th><td><InlineText text={row.fact} /></td><td><InlineText text={row.examNote} /></td><td><a href={row.source.url} target="_blank" rel="noreferrer">{row.source.title} ↗</a></td></tr>)}</tbody></table></div>
     <p className="precision-facts-note">Estas cifras y comportamientos están fechados en el banco. Si el examen o tu tenant indica otra variante, manda la variante oficial vigente.</p>
     <PracticeButton practiceCount={practiceCount} onPractice={onPractice} />

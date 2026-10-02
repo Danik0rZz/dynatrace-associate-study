@@ -39,7 +39,7 @@ writeFileSync(file('inventario.md'), renderSummary(rows, problems))
 // Índices ligeros de la app (guía por bloque e índice de preguntas), generados desde los datos completos.
 const generated = (name: string) => resolve(root, 'src', 'data', 'generated', name)
 mkdirSync(resolve(root, 'src', 'data', 'generated'), { recursive: true })
-writeFileSync(generated('guide-index.json'), renderIndexJson(buildGuideIndex(modules, studyGuide, precisionFacts)))
+writeFileSync(generated('guide-index.json'), renderIndexJson(buildGuideIndex(modules, studyGuide, precisionFacts, plan)))
 writeFileSync(generated('question-index.json'), renderIndexJson(buildQuestionIndex(allQuestions)))
 
 const withoutQuestions = rows.filter((row) => row.preguntas === 0).length
