@@ -1,0 +1,7 @@
+node_modules
+dist
+*.log
+.DS_Store
+.vite
+# Salidas de sesiones de trabajo con IA (no forman parte de la app)
+Claude outputs/

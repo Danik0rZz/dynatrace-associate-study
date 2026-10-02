@@ -1,0 +1,118 @@
+/**
+ * Índice ligero de las ilustraciones y animaciones: qué apartados tienen visual.
+ * Los visuales se descargan por bloque solo al abrirlo (ver LazySectionVisual).
+ * Un test comprueba que este índice coincide con los registros de cada bloque.
+ */
+export const visualIds: Record<string, string[]> = {
+  'welcome': [
+    'platform-model',
+    'investigation-loop',
+    'deep-problem-davis',
+    'deep-dynatrace-101',
+    'sup-smartscape',
+    'sup-problems-lifecycle',
+  ],
+  'instructions': [
+    'deep-official-scope',
+    'deep-study-routine',
+    'exam-strategy',
+    'deep-exam-readiness',
+    'sup-network-zones',
+  ],
+  'platform': [
+    'platform-contract',
+    'permissions',
+    'deep-grail-records',
+    'deep-hub-lifecycle',
+    'deep-documents-permissions',
+    'sup-grail-permissions',
+  ],
+  'observability': [
+    'sup-activegate-routing',
+    'sup-davis-problems',
+    'oneagent',
+    'activegate',
+    'monitoring-modes',
+    'injection',
+    'deep-observability-troubleshooting',
+    'deep-infrastructure-connectors',
+  ],
+  'notebooks': [
+    'choose',
+    'deep-notebook-sections',
+    'deep-dashboard-model',
+    'visualizations',
+    'deep-document-sharing',
+    'sup-dashboard-tiles-timeframe',
+    'sup-dashboard-json',
+  ],
+  'business-dem': [
+    'rum-synthetic',
+    'rum-sessions',
+    'deep-rum-session-semantics',
+    'deep-business-capture',
+    'event-model',
+    'deep-business-journeys',
+    'sup-business-flow',
+    'sup-synthetic-monitors',
+  ],
+  'data-analysis': [
+    'sup-grail-buckets',
+    'sup-bucket-lifecycle',
+    'timeframes',
+    'correlation',
+    'deep-retention-reference',
+    'sampling-completeness',
+    'deep-baselines-impact',
+    'key-requests',
+  ],
+  'dql': [
+    'pipeline',
+    'aggregation',
+    'deep-dql-command-contract',
+    'deep-dql-dpl',
+    'deep-dql-performance',
+    'sup-dql-join',
+    'sup-dql-smartscape',
+  ],
+  'security': [
+    'code-thirdparty',
+    'rva',
+    'deep-third-party-code-level',
+    'deep-security-prioritization',
+    'appsec-modes',
+    'security-permissions',
+    'sup-third-party-evaluation',
+  ],
+  'automation': [
+    'workflow-model',
+    'triggers',
+    'deep-actor-permissions',
+    'deep-execution-states',
+    'deep-jinja-dql',
+    'deep-workflow-limits',
+    'sup-problem-davis-triggers',
+  ],
+  'ingestion': [
+    'data-path',
+    'deep-openpipeline',
+    'mechanisms',
+    'metric-ingestion',
+    'trace-ingestion',
+    'log-ingestion',
+    'deep-ingestion-lifecycle',
+    'sup-op-groups-access',
+  ],
+  'other': [
+    'sup-smartscape-on-grail',
+    'deep-smartscape-graph',
+    'entities',
+    'deep-hub-extensions',
+    'deep-cross-app-troubleshooting',
+    'smartscape-diagnosis',
+    'logs',
+  ],
+}
+
+export const hasSectionVisual = (moduleId: string, sectionId: string): boolean => visualIds[moduleId]?.includes(sectionId) ?? false
+

@@ -1,0 +1,6 @@
+import { glossary } from '../data/glossary'
+
+export function GlossaryView({ search, onSearch, onOpenModule }: { search: string; onSearch: (value: string) => void; onOpenModule: (id: string) => void }) {
+  const entries = glossary.filter((entry) => `${entry.term} ${entry.definition}`.toLowerCase().includes(search.toLowerCase()))
+  return <div className="page-stack glossary-page"><section className="section-heading"><div><p className="eyebrow">REFERENCIA RÁPIDA</p><h1>Glosario</h1><p>Los términos se mantienen en inglés cuando así aparecen en Dynatrace; la explicación está en español.</p></div><label className="search-field"><span>⌕</span><input value={search} onChange={(event) => onSearch(event.target.value)} placeholder="Buscar término" aria-label="Buscar término en el glosario" /></label></section><div className="glossary-grid">{entries.map((entry) => <article className="glossary-card" key={`${entry.moduleId}-${entry.term}`}><div><span className="term-chip">{entry.term}</span><button onClick={() => onOpenModule(entry.moduleId)}>Ver módulo ↗</button></div><p>{entry.definition}</p></article>)}</div>{entries.length === 0 && <p className="empty-state">No hay términos que coincidan con “{search}”.</p>}</div>
+}

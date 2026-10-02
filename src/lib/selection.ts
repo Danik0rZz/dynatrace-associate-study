@@ -1,0 +1,136 @@
+import type { Question, QuestionBucket } from '../data/types'
+import { latestAttempt, type ProgressState } from './progress'
+
+/**
+ * Selección aleatoria de preguntas para quizzes, simulacro y repaso.
+ *
+ * Garantías:
+ * - Aleatoriedad real: Fisher–Yates con crypto.getRandomValues (si existe), nunca semillas correlativas.
+ * - Rotación: dentro de cada pool se prioriza lo menos practicado y lo no servido recientemente,
+ *   así dos sesiones seguidas no repiten las mismas preguntas mientras queden otras sin ver.
+ * - El orden de las opciones se baraja de forma independiente en cada pregunta y sesión.
+ */
+
+export type RandomSource = () => number
+
+const cryptoRandom: RandomSource = () => {
+  const cryptoApi = typeof globalThis !== 'undefined' ? globalThis.crypto : undefined
+  if (cryptoApi?.getRandomValues) {
+    const buffer = new Uint32Array(1)
+    cryptoApi.getRandomValues(buffer)
+    return buffer[0] / 4294967296
+  }
+  return Math.random()
+}
+
+export const shuffle = <T,>(items: readonly T[], random: RandomSource = cryptoRandom): T[] => {
+  const copy = [...items]
+  for (let index = copy.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(random() * (index + 1))
+    ;[copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]]
+  }
+  return copy
+}
+
+/* ——— Historial de preguntas servidas (aunque no se respondan) ——— */
+
+const SERVED_KEY = 'dynatrace-associate-served-v1'
+const SERVED_LIMIT = 400
+
+export const loadServed = (): string[] => {
+  try {
+    const raw = typeof window !== 'undefined' ? window.localStorage.getItem(SERVED_KEY) : null
+    const parsed = raw ? JSON.parse(raw) : []
+    return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string') : []
+  } catch {
+    return []
+  }
+}
+
+export const rememberServed = (ids: string[]): void => {
+  try {
+    if (typeof window === 'undefined') return
+    const next = [...ids, ...loadServed().filter((id) => !ids.includes(id))].slice(0, SERVED_LIMIT)
+    window.localStorage.setItem(SERVED_KEY, JSON.stringify(next))
+  } catch {
+    /* almacenamiento no disponible: la selección sigue siendo aleatoria */
+  }
+}
+
+/**
+ * Ordena un pool por frescura: primero lo nunca respondido, luego lo menos practicado;
+ * dentro de cada nivel, lo no servido recientemente; los empates se resuelven al azar.
+ */
+export const byFreshness = (questions: readonly Question[], progress: ProgressState, served: readonly string[] = [], random: RandomSource = cryptoRandom): Question[] => {
+  const recency = new Map(served.map((id, index) => [id, served.length - index]))
+  const randomized = shuffle(questions, random)
+  return randomized
+    .map((question, order) => ({ question, order, attempts: progress.attempts[question.id]?.length ?? 0, recent: recency.get(question.id) ?? 0 }))
+    .sort((left, right) => left.attempts - right.attempts || left.recent - right.recent || left.order - right.order)
+    .map((entry) => entry.question)
+}
+
+const QUICK_TARGET: Record<QuestionBucket, number> = { practical: 1, troubleshooting: 1, scenario: 3, precision: 2, knowledge: 1 }
+
+/** Quiz rápido de un módulo: 8 preguntas con mezcla de tipos, rotando el pool. */
+export const quickQuizIds = (questions: readonly Question[], progress: ProgressState, served: readonly string[] = [], size = 8, random: RandomSource = cryptoRandom): string[] => {
+  const ordered = byFreshness(questions, progress, served, random)
+  // La mezcla de tipos solo se aplica dentro del nivel más fresco del pool, para no reintroducir repetidas.
+  const attempts = (question: Question) => progress.attempts[question.id]?.length ?? 0
+  const freshest = ordered.length ? attempts(ordered[0]) : 0
+  const tier = ordered.filter((question) => attempts(question) === freshest)
+  const candidates = tier.length >= size ? tier : ordered.slice(0, size)
+  const picked: Question[] = []
+  for (const bucket of Object.keys(QUICK_TARGET) as QuestionBucket[]) {
+    picked.push(...candidates.filter((question) => question.bucket === bucket).slice(0, QUICK_TARGET[bucket]))
+  }
+  const chosen = new Set(picked.map((question) => question.id))
+  const fill = ordered.filter((question) => !chosen.has(question.id)).slice(0, Math.max(0, size - picked.length))
+  return shuffle([...picked, ...fill].slice(0, size), random).map((question) => question.id)
+}
+
+/** Banco completo de un módulo en orden aleatorio. */
+export const fullBankIds = (questions: readonly Question[], random: RandomSource = cryptoRandom): string[] =>
+  shuffle(questions, random).map((question) => question.id)
+
+/**
+ * Simulacro: reparto proporcional al tamaño de cada módulo (método del mayor resto),
+ * rotando dentro de cada módulo y barajando el orden final.
+ */
+export const mockExamIds = (questions: readonly Question[], progress: ProgressState, served: readonly string[] = [], size = 60, random: RandomSource = cryptoRandom): string[] => {
+  const byModule = new Map<string, Question[]>()
+  for (const question of questions) byModule.set(question.moduleId, [...(byModule.get(question.moduleId) ?? []), question])
+  const total = questions.length
+  const quotas = [...byModule.entries()].map(([moduleId, pool]) => {
+    const exact = (pool.length / total) * size
+    return { moduleId, pool, quota: Math.floor(exact), remainder: exact - Math.floor(exact), tie: random() }
+  })
+  let missing = size - quotas.reduce((sum, entry) => sum + entry.quota, 0)
+  for (const entry of [...quotas].sort((a, b) => b.remainder - a.remainder || a.tie - b.tie)) {
+    if (missing <= 0) break
+    entry.quota += 1
+    missing -= 1
+  }
+  const picked = quotas.flatMap((entry) => byFreshness(entry.pool, progress, served, random).slice(0, entry.quota))
+  return shuffle(picked, random).map((question) => question.id)
+}
+
+/**
+ * Repaso adaptativo: primero lo fallado o respondido con poca confianza (lo más antiguo antes),
+ * después lo no visto en orden aleatorio y rotado. El orden final se baraja.
+ */
+export const adaptiveReviewIds = (questions: readonly Question[], progress: ProgressState, served: readonly string[] = [], limit = 24, random: RandomSource = cryptoRandom): string[] => {
+  const due = questions
+    .filter((question) => {
+      const latest = latestAttempt(progress, question.id)
+      return latest && (!latest.correct || latest.confidence <= 3)
+    })
+    .sort((left, right) => (latestAttempt(progress, left.id)?.timestamp ?? '').localeCompare(latestAttempt(progress, right.id)?.timestamp ?? ''))
+  const dueIds = new Set(due.map((question) => question.id))
+  const rest = byFreshness(questions.filter((question) => !dueIds.has(question.id)), progress, served, random)
+  return shuffle([...due, ...rest].slice(0, limit), random).map((question) => question.id)
+}
+
+/** Orden aleatorio e independiente de las opciones de cada pregunta. */
+export const optionOrders = (questions: readonly Question[], random: RandomSource = cryptoRandom): Record<string, string[]> =>
+  Object.fromEntries(questions.map((question) => [question.id, shuffle(question.options.map((option) => option.id), random)]))
