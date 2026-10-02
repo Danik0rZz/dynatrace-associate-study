@@ -66,13 +66,6 @@ export type Attempt = {
   timestamp: string
 }
 
-export type StoredProgress = {
-  version: 3
-  attempts: Record<string, Attempt[]>
-  completedModules: string[]
-  activeQuestionId?: string
-}
-
 /* ——— Guía de estudio ——— */
 
 export type StudyComparison = {

@@ -3,6 +3,7 @@ import { allQuestions, questionsById } from '../data/questions'
 import { precisionFacts, studyGuide as deepStudyContent } from '../data/guide'
 import { groupBySection, guideRefFor, PRECISION_SECTION, precisionRowsFor, questionIdsForSection, sectionFor } from '../lib/guide-links'
 import { applyBackup, BackupError, collectBackup, parseBackup, summarizeBackup } from '../lib/backup'
+import { parseProgress } from '../lib/progress'
 
 class MemoryStorage {
   private map = new Map<string, string>()
@@ -71,6 +72,8 @@ describe('copia de seguridad del progreso', () => {
     expect(target.keys()).toEqual(['dynatrace-associate-progress-v3', 'dynatrace-associate-served-v1', 'otra-app'])
     expect(target.getItem('dynatrace-associate-progress-v3')).toBe(progress)
     expect(target.getItem('otra-app')).toBe('y')
+    // Una copia v3 antigua (con completedModules) se sigue leyendo sin perder intentos.
+    expect(Object.keys(parseProgress(target.getItem('dynatrace-associate-progress-v3')).attempts)).toEqual(['A-001', 'A-002', 'A-003'])
   })
 
   it('rechaza ficheros que no son una copia válida', () => {

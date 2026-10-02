@@ -10,6 +10,7 @@ import { precisionFacts, studyGuide as studyContent } from '../data/guide'
 import { modulesWithQuestions, questionsByModule } from '../data/questions'
 import { studyGuides } from '../data/study-guides'
 import { type ProgressState, moduleCompletion } from '../lib/progress'
+import { safeSetItem } from '../lib/safe-storage'
 
 export function ModuleView({ module, progress, onOpenModule, onPracticeSection, onQuick, onFull, onPractice }: { module: Module; progress: ProgressState; onOpenModule: (moduleId: string) => void; onPracticeSection: (moduleId: string, sectionId: string) => void; onQuick: () => void; onFull: () => void; onPractice: () => void }) {
   const questions = questionsByModule[module.id]
@@ -51,7 +52,7 @@ function StudyChapterView({ moduleId, chapter, onPracticeSection }: { moduleId: 
   const toggleMastery = (index: number) => {
     const next = chapter.masteryChecklist.map((_, itemIndex) => itemIndex === index ? !checked[itemIndex] : Boolean(checked[itemIndex]))
     setChecked(next)
-    window.localStorage.setItem(storageKey, JSON.stringify(next))
+    safeSetItem(storageKey, JSON.stringify(next))
   }
   const sourceCount = chapter.sections.reduce((total, section) => total + (section.sourceRefs?.length ?? 0), 0)
   return <section className="study-chapter"><div className="study-chapter-header"><div><p className="eyebrow">LECCIÓN COMPLETA · ESTUDIO SIN SALIR DE LA APP</p><h2>Contenido de estudio</h2><p>{chapter.introduction}</p><div className="chapter-stats"><span><strong>{chapter.sections.length}</strong> bloques internos</span><span><strong>{sourceCount}</strong> enlaces por bloque</span><span><strong>{chapter.masteryChecklist.length}</strong> criterios de dominio</span></div></div><div className="chapter-outcomes"><span className="eyebrow">AL TERMINAR</span>{chapter.outcomes.map((outcome) => <span key={outcome}>✓ {outcome}</span>)}</div></div><nav className="chapter-index" aria-label="Índice de la lección">{chapter.sections.map((section) => <a href={`#${section.id}`} key={section.id} className={hasSectionVisual(moduleId, section.id) ? 'has-visual' : undefined} title={hasSectionVisual(moduleId, section.id) ? 'Incluye ilustración o animación' : undefined}><InlineText text={section.title} /></a>)}<a href="#precision-facts">Hechos de precisión</a></nav><div className="study-sections">{chapter.sections.map((section) => <StudySectionView section={section} moduleId={moduleId} key={section.id} practiceCount={questionIdsForSection(moduleId, section.id).length} onPractice={() => onPracticeSection(section.id)} />)}</div>{precisionFacts[moduleId] && <PrecisionFactsView factSheet={precisionFacts[moduleId]} practiceCount={questionIdsForSection(moduleId, PRECISION_SECTION).length} onPractice={() => onPracticeSection(PRECISION_SECTION)} />}<div className="mastery-box"><div><p className="eyebrow">CHECKLIST DE DOMINIO</p><h3>Antes de pasar de módulo</h3><small>{checked.filter(Boolean).length}/{chapter.masteryChecklist.length} criterios confirmados</small></div><div className="mastery-list">{chapter.masteryChecklist.map((item, index) => <label key={item}><input type="checkbox" checked={Boolean(checked[index])} onChange={() => toggleMastery(index)} /> <span>{item}</span></label>)}</div></div></section>

@@ -1,5 +1,6 @@
 import type { Question, QuestionBucket } from '../data/types'
-import { latestAttempt, type ProgressState } from './progress'
+import { dueQuestionIds, type ProgressState } from './progress'
+import { safeSetItem } from './safe-storage'
 
 /**
  * Selección aleatoria de preguntas para quizzes, simulacro y repaso.
@@ -48,13 +49,9 @@ export const loadServed = (): string[] => {
 }
 
 export const rememberServed = (ids: string[]): void => {
-  try {
-    if (typeof window === 'undefined') return
-    const next = [...ids, ...loadServed().filter((id) => !ids.includes(id))].slice(0, SERVED_LIMIT)
-    window.localStorage.setItem(SERVED_KEY, JSON.stringify(next))
-  } catch {
-    /* almacenamiento no disponible: la selección sigue siendo aleatoria */
-  }
+  // Si no se puede guardar, la selección sigue siendo aleatoria.
+  const next = [...ids, ...loadServed().filter((id) => !ids.includes(id))].slice(0, SERVED_LIMIT)
+  safeSetItem(SERVED_KEY, JSON.stringify(next))
 }
 
 /**
@@ -116,20 +113,12 @@ export const mockExamIds = (questions: readonly Question[], progress: ProgressSt
 }
 
 /**
- * Repaso adaptativo: primero lo fallado o respondido con poca confianza (lo más antiguo antes),
- * después lo no visto en orden aleatorio y rotado. El orden final se baraja.
+ * Repaso adaptativo: las `limit` preguntas pendientes más antiguas de la cola (`dueQuestionIds`),
+ * en orden barajado. Con la cola vacía no hay repaso.
  */
-export const adaptiveReviewIds = (questions: readonly Question[], progress: ProgressState, served: readonly string[] = [], limit = 24, random: RandomSource = cryptoRandom): string[] => {
-  const due = questions
-    .filter((question) => {
-      const latest = latestAttempt(progress, question.id)
-      return latest && (!latest.correct || latest.confidence <= 3)
-    })
-    .sort((left, right) => (latestAttempt(progress, left.id)?.timestamp ?? '').localeCompare(latestAttempt(progress, right.id)?.timestamp ?? ''))
-  const dueIds = new Set(due.map((question) => question.id))
-  const rest = byFreshness(questions.filter((question) => !dueIds.has(question.id)), progress, served, random)
-  return shuffle([...due, ...rest].slice(0, limit), random).map((question) => question.id)
-}
+export const REVIEW_SESSION_SIZE = 24
+export const adaptiveReviewIds = (questions: readonly Question[], progress: ProgressState, limit = REVIEW_SESSION_SIZE, random: RandomSource = cryptoRandom): string[] =>
+  shuffle(dueQuestionIds(progress, questions).slice(0, limit), random)
 
 /** Orden aleatorio e independiente de las opciones de cada pregunta. */
 export const optionOrders = (questions: readonly Question[], random: RandomSource = cryptoRandom): Record<string, string[]> =>

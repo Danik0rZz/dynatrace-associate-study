@@ -1,29 +1,40 @@
 import type { Attempt, Question } from '../data/types'
+import { safeSetItem } from './safe-storage'
 
-const STORAGE_KEY = 'dynatrace-associate-progress-v3'
+export const PROGRESS_KEY = 'dynatrace-associate-progress-v3'
+/** Intentos que se conservan por pregunta: los más antiguos se descartan al registrar uno nuevo. */
+export const MAX_ATTEMPTS_PER_QUESTION = 20
+/** Confianza (1-5) a partir de la cual un acierto cuenta como seguro. */
+export const SURE_CONFIDENCE = 3
+/** Aciertos seguros consecutivos que sacan una pregunta del repaso. */
+export const REVIEW_EXIT_STREAK = 2
+
 export type ProgressState = {
   version: 3
   attempts: Record<string, Attempt[]>
-  completedModules: string[]
-  activeQuestionId?: string
 }
 
-export const emptyProgress = (): ProgressState => ({ version: 3, attempts: {}, completedModules: [] })
-export const loadProgress = (): ProgressState => {
-  if (typeof window === 'undefined') return emptyProgress()
+export const emptyProgress = (): ProgressState => ({ version: 3, attempts: {} })
+
+/** Interpreta el JSON guardado. Los campos de versiones anteriores (`completedModules`, `activeQuestionId`) se ignoran. */
+export const parseProgress = (raw: string | null): ProgressState => {
+  if (!raw) return emptyProgress()
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY)
-    if (!raw) return emptyProgress()
-    const parsed = JSON.parse(raw) as ProgressState
-    if (parsed.version !== 3 || typeof parsed.attempts !== 'object') return emptyProgress()
-    return { version: 3, attempts: parsed.attempts ?? {}, completedModules: parsed.completedModules ?? [], activeQuestionId: parsed.activeQuestionId }
+    const parsed = JSON.parse(raw) as { version?: unknown; attempts?: unknown }
+    if (!parsed || parsed.version !== 3 || !parsed.attempts || typeof parsed.attempts !== 'object' || Array.isArray(parsed.attempts)) return emptyProgress()
+    return { version: 3, attempts: parsed.attempts as Record<string, Attempt[]> }
   } catch {
     return emptyProgress()
   }
 }
-export const saveProgress = (progress: ProgressState): void => {
-  if (typeof window !== 'undefined') window.localStorage.setItem(STORAGE_KEY, JSON.stringify(progress))
+export const loadProgress = (): ProgressState => {
+  try {
+    return parseProgress(typeof window !== 'undefined' ? window.localStorage.getItem(PROGRESS_KEY) : null)
+  } catch {
+    return emptyProgress()
+  }
 }
+export const saveProgress = (progress: ProgressState): boolean => safeSetItem(PROGRESS_KEY, JSON.stringify(progress))
 export const scoreAttempt = (question: Question, selectedOptionIds: string[]): { score: number; correct: boolean } => {
   const selected = [...new Set(selectedOptionIds)]
   const correct = question.correctOptionIds
@@ -45,32 +56,39 @@ export const recordAttempt = (
     confidence,
     timestamp: new Date().toISOString(),
   }
-  return { ...progress, attempts: { ...progress.attempts, [question.id]: [...(progress.attempts[question.id] ?? []), attempt] } }
+  const history = [...(progress.attempts[question.id] ?? []), attempt].slice(-MAX_ATTEMPTS_PER_QUESTION)
+  return { ...progress, attempts: { ...progress.attempts, [question.id]: history } }
 }
 export const latestAttempt = (progress: ProgressState, questionId: string): Attempt | undefined => {
   const attempts = progress.attempts[questionId]
   return attempts?.[attempts.length - 1]
 }
-export const dueQuestionIds = (progress: ProgressState, questions: Question[]): string[] =>
-  questions.filter((question) => {
-    const latest = latestAttempt(progress, question.id)
-    return !latest || !latest.correct || latest.confidence <= 3
-  }).sort((left, right) => {
-    const leftLatest = latestAttempt(progress, left.id)
-    const rightLatest = latestAttempt(progress, right.id)
-    if (!leftLatest && rightLatest) return -1
-    if (leftLatest && !rightLatest) return 1
-    return (leftLatest?.timestamp ?? '').localeCompare(rightLatest?.timestamp ?? '')
-  }).map((question) => question.id)
-export const adaptiveReviewQuestionIds = (progress: ProgressState, questions: Question[], limit = 24): string[] => {
-  const due = dueQuestionIds(progress, questions)
-  const unseen = questions.filter((question) => !progress.attempts[question.id]).map((question) => question.id)
-  return [...new Set([...due, ...unseen])].slice(0, limit)
+
+const isSure = (attempt: Attempt): boolean => attempt.correct && attempt.confidence >= SURE_CONFIDENCE
+
+/**
+ * Criterio único de repaso. Una pregunta entra en el repaso al fallarla o al responderla con confianza ≤ 2,
+ * y sale tras dos aciertos consecutivos con confianza ≥ 3. Lo nunca respondido no está en el repaso.
+ */
+export const needsReview = (attempts: readonly Attempt[] | undefined): boolean => {
+  if (!attempts?.length) return false
+  let streak = 0
+  for (let index = attempts.length - 1; index >= 0; index -= 1) {
+    if (!isSure(attempts[index])) return streak < REVIEW_EXIT_STREAK
+    streak += 1
+  }
+  return false
 }
+
+/** Cola de repaso: las preguntas pendientes, de la respondida hace más tiempo a la más reciente. */
+export const dueQuestionIds = (progress: ProgressState, questions: readonly Question[]): string[] =>
+  questions
+    .filter((question) => needsReview(progress.attempts[question.id]))
+    .sort((left, right) => (latestAttempt(progress, left.id)?.timestamp ?? '').localeCompare(latestAttempt(progress, right.id)?.timestamp ?? ''))
+    .map((question) => question.id)
 export const moduleScore = (progress: ProgressState, questionIds: string[]): number => {
   const latest = questionIds.map((id) => latestAttempt(progress, id)).filter((attempt): attempt is Attempt => Boolean(attempt))
   return latest.length ? Math.round(latest.reduce((sum, attempt) => sum + attempt.score, 0) / latest.length * 100) : 0
 }
 export const moduleCompletion = (progress: ProgressState, questionIds: string[]): number =>
   questionIds.length ? Math.round(questionIds.filter((id) => Boolean(latestAttempt(progress, id))).length / questionIds.length * 100) : 0
-export { STORAGE_KEY }
