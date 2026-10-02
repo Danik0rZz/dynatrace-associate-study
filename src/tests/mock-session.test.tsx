@@ -33,7 +33,7 @@ const savedMock = (overrides: Partial<SavedMock> = {}): SavedMock => {
 const answerCurrent = () => {
   const hint = screen.getByText(/Selecciona (exactamente \d|la respuesta)/).textContent ?? ''
   const needed = Number(hint.match(/\d/)?.[0] ?? 1)
-  const options = screen.getAllByRole(needed > 1 ? 'checkbox' : 'radio')
+  const options = within(screen.getByRole('group', { name: 'Opciones de respuesta' })).getAllByRole(needed > 1 ? 'checkbox' : 'radio')
   for (let index = 0; index < needed; index++) fireEvent.click(options[index])
 }
 

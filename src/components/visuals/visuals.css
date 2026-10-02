@@ -1,4 +1,7 @@
 /* ——— Marco de ilustraciones y animaciones de estudio ——— */
+/* Isla clara: las ilustraciones se ven siempre en claro, también con el tema oscuro. Los tokens que usa este
+   fichero se fijan aquí a sus valores claros, de modo que no heredan los del tema oscuro (adelanto mínimo del F3A). */
+.sv { color-scheme: light; color: #182b30; --ink: #182b30; --ink-soft: #4f6166; --line: #dbe3e2; --teal: #0a7b70; --teal-dark: #06635a; }
 .sv { max-width: 940px; margin: 22px 0 6px 49px; background: #fff; border: 1px solid var(--line); box-shadow: 0 10px 30px rgba(35, 62, 66, .05); }
 .sv-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 14px 10px 16px; border-bottom: 1px solid #e7eeec; background: linear-gradient(180deg, #fbfdfc, #f4f8f7); }
 .sv-header > div:first-child { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; min-width: 0; }

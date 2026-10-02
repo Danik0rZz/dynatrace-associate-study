@@ -28,7 +28,7 @@ describe('interfaz', () => {
     fireEvent.click(screen.getAllByText('Practicar este apartado')[0])
     const hint = screen.getByText(/Selecciona (exactamente \d|la respuesta)/).textContent ?? ''
     const needed = Number(hint.match(/\d/)?.[0] ?? 1)
-    const options = screen.getAllByRole(needed > 1 ? 'checkbox' : 'radio')
+    const options = within(screen.getByRole('group', { name: 'Opciones de respuesta' })).getAllByRole(needed > 1 ? 'checkbox' : 'radio')
     for (let index = 0; index < needed; index++) fireEvent.click(options[index])
     fireEvent.click(screen.getByRole('button', { name: /Comprobar respuesta/ }))
     fireEvent.click(screen.getByRole('button', { name: /VER EN LA GUÍA/ }))
