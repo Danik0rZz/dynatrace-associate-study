@@ -20,7 +20,7 @@ export function Sidebar({ view, collapsed, routeModule, onToggle, onNavigate, on
   return (
     <aside className="sidebar">
       <div className="brand-lockup">
-        <div className="brand-mark" aria-hidden="true">D</div>
+        <div className="brand-mark" aria-hidden="true">SL</div>
         <div className="brand-text">
           <p className="brand-kicker">ASSOCIATE</p>
           <p className="brand-name">Study Lab</p>

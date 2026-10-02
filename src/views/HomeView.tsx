@@ -1,5 +1,6 @@
 import { useMediaQuery } from '../app/useMediaQuery'
 import { BackupTools } from '../components/BackupTools'
+import { Disclaimer } from '../components/Disclaimer'
 import type { Module } from '../data/types'
 import { allQuestions } from '../data/questions'
 import { examProfile } from '../data/modules'
@@ -9,13 +10,14 @@ export function HomeView({ modules: moduleList, progress, continueTarget: active
   const mobile = useMediaQuery('(max-width: 780px)')
   return (
     <div className="page-stack">
+      <Disclaimer variant="full" />
       <section className="hero-grid">
         <div className="hero-copy">
           <p className="eyebrow">PREPARACIÓN TÉCNICA · 2026</p>
           <h1>Convierte el path en<br /><em>criterio operativo.</em></h1>
           <p className="hero-lede">Una ruta de estudio en español para dominar la certificación Associate: conceptos, precisión, escenarios y decisiones con evidencia oficial.</p>
           <div className="hero-actions"><button className="button-primary" onClick={onStart} aria-describedby="continue-target">Continuar ruta <span>→</span></button><button className="button-quiet" onClick={onMap}>Explorar mapa <span>↗</span></button></div>
-          <div className="hero-source-line"><span className="source-check">✓</span> Fuentes oficiales enlazadas por módulo y por pregunta</div>
+          <div className="hero-source-line"><span className="source-check">✓</span> Enlaces a la documentación oficial de Dynatrace por módulo y por pregunta</div>
         </div>
         <div className="hero-progress-card">
           <div className="progress-orbit" style={{ background: `conic-gradient(var(--teal) 0 ${overallPercentage}%, rgba(255,255,255,.15) ${overallPercentage}% 100%)` }}><div className="orbit-center"><strong>{overallPercentage}%</strong><span>revisado</span></div></div>
