@@ -64,7 +64,7 @@
   --node-surface-2: #fef3c7;
   --node-text: #b45309;
   --node-surface-3: #f1f5f9;
-  --node-text-2: #64748b;
+  --node-text-2: #5b6b7f;
   --node-line: #f1f5f4;
   --node-surface-4: #e2e8f0;
   --react-graphic: #1e3a44;
@@ -158,6 +158,43 @@
   --accent-strong: #06635a;
   --navy-text: #112f39;
   --danger: #b9472d;
+  /* Mapa (9c): fases, aristas, rejilla y progreso. Mismo valor en claro que los literales que había en MapView.tsx. */
+  --map-phase-1: #087d72;
+  --map-phase-1-tint: #087d7214;
+  --map-phase-1-line: #087d7240;
+  --map-phase-2: #11a899;
+  --map-phase-2-tint: #11a89914;
+  --map-phase-2-line: #11a89940;
+  --map-phase-3: #1c7a6f;
+  --map-phase-3-tint: #1c7a6f14;
+  --map-phase-3-line: #1c7a6f40;
+  --map-phase-4: #1f4854;
+  --map-phase-4-tint: #1f485414;
+  --map-phase-4-line: #1f485440;
+  /* Texto con el color de la fase (≥ 4,5:1) y fondo de la etiqueta blanca de la «Ruta curricular».
+     Solo la fase 2 cambia respecto al color de línea: #11a899 sobre blanco daba ≈ 3:1. */
+  --map-phase-1-text: #087d72;
+  --map-phase-2-text: #0b7d71;
+  --map-phase-3-text: #1c7a6f;
+  --map-phase-4-text: #1f4854;
+  --map-phase-1-badge: #087d72;
+  --map-phase-2-badge: #0b7d71;
+  --map-phase-3-badge: #1c7a6f;
+  --map-phase-4-badge: #1f4854;
+  --map-edge-foundation: #087d72;
+  --map-edge-grail: #11a899;
+  --map-edge-dem: #2a9d8f;
+  --map-edge-security: #1f4854;
+  --map-edge-remediation: #df735a;
+  --map-edge-hub: #70908f;
+  --map-grid: #cbd5e1;
+  --map-progress-start: #11a899;
+  --map-progress-end: #31b8aa;
+  --map-progress-empty: #cbd5e1;
+  /* Contorno de los puntos de estado de la leyenda (≥ 3:1 sobre su fondo; el texto de al lado se mantiene). */
+  --legend-mastered-line: #0a7b70;
+  --legend-progress-line: #b45309;
+  --legend-pending-line: #64748b;
 }
 
 /* tema-oscuro:inicio — generado con `npm run tema` desde src/theme/dark-tokens.ts; no editar a mano */
@@ -185,8 +222,8 @@
     --thin-surface: #1f2a29;
     --cta-surface: #18312c;
     --phase-surface: #1a352e;
-    --canvas-surface: #23302a;
-    --legend-surface-2: #171e27;
+    --canvas-surface: #132024;
+    --legend-surface-2: #3a4f55;
     --map-line: #3e514d;
     --map-line-3: #34465b;
     --node-surface: #19342f;
@@ -196,7 +233,7 @@
     --node-text-2: #c4cbd4;
     --node-line: #3b534d;
     --node-surface-4: #192330;
-    --react-graphic-2: #34465b;
+    --react-graphic-2: #4a6268;
     --inspector-surface: #212e2b;
     --inspector-surface-2: #1d312c;
     --inspector-line: #355a4e;
@@ -258,6 +295,34 @@
     --accent-strong: #06635a;
     --navy-text: #c9dde0;
     --danger: #b9472d;
+    --react-graphic: #dce8e6;
+    --map-phase-1: #3fbcad;
+    --map-phase-1-tint: #3fbcad1f;
+    --map-phase-1-line: #3fbcad66;
+    --map-phase-2: #3fd0bf;
+    --map-phase-2-tint: #3fd0bf1f;
+    --map-phase-2-line: #3fd0bf66;
+    --map-phase-3: #5cc3b6;
+    --map-phase-3-tint: #5cc3b61f;
+    --map-phase-3-line: #5cc3b666;
+    --map-phase-4: #9cc1cc;
+    --map-phase-4-tint: #9cc1cc1f;
+    --map-phase-4-line: #9cc1cc66;
+    --map-phase-1-text: #3fbcad;
+    --map-phase-2-text: #3fd0bf;
+    --map-phase-3-text: #5cc3b6;
+    --map-phase-4-text: #9cc1cc;
+    --map-edge-foundation: #3fbcad;
+    --map-edge-grail: #3fd0bf;
+    --map-edge-dem: #5cc3b6;
+    --map-edge-security: #9cc1cc;
+    --map-edge-remediation: #ef8a72;
+    --map-edge-hub: #8fa9a8;
+    --map-grid: #33484e;
+    --map-progress-empty: #3a4f55;
+    --legend-mastered-line: #4fc7b8;
+    --legend-progress-line: #f59e0b;
+    --legend-pending-line: #9fb3bb;
   }
 }
 :root[data-theme="dark"] {
@@ -283,8 +348,8 @@
   --thin-surface: #1f2a29;
   --cta-surface: #18312c;
   --phase-surface: #1a352e;
-  --canvas-surface: #23302a;
-  --legend-surface-2: #171e27;
+  --canvas-surface: #132024;
+  --legend-surface-2: #3a4f55;
   --map-line: #3e514d;
   --map-line-3: #34465b;
   --node-surface: #19342f;
@@ -294,7 +359,7 @@
   --node-text-2: #c4cbd4;
   --node-line: #3b534d;
   --node-surface-4: #192330;
-  --react-graphic-2: #34465b;
+  --react-graphic-2: #4a6268;
   --inspector-surface: #212e2b;
   --inspector-surface-2: #1d312c;
   --inspector-line: #355a4e;
@@ -356,6 +421,34 @@
   --accent-strong: #06635a;
   --navy-text: #c9dde0;
   --danger: #b9472d;
+  --react-graphic: #dce8e6;
+  --map-phase-1: #3fbcad;
+  --map-phase-1-tint: #3fbcad1f;
+  --map-phase-1-line: #3fbcad66;
+  --map-phase-2: #3fd0bf;
+  --map-phase-2-tint: #3fd0bf1f;
+  --map-phase-2-line: #3fd0bf66;
+  --map-phase-3: #5cc3b6;
+  --map-phase-3-tint: #5cc3b61f;
+  --map-phase-3-line: #5cc3b666;
+  --map-phase-4: #9cc1cc;
+  --map-phase-4-tint: #9cc1cc1f;
+  --map-phase-4-line: #9cc1cc66;
+  --map-phase-1-text: #3fbcad;
+  --map-phase-2-text: #3fd0bf;
+  --map-phase-3-text: #5cc3b6;
+  --map-phase-4-text: #9cc1cc;
+  --map-edge-foundation: #3fbcad;
+  --map-edge-grail: #3fd0bf;
+  --map-edge-dem: #5cc3b6;
+  --map-edge-security: #9cc1cc;
+  --map-edge-remediation: #ef8a72;
+  --map-edge-hub: #8fa9a8;
+  --map-grid: #33484e;
+  --map-progress-empty: #3a4f55;
+  --legend-mastered-line: #4fc7b8;
+  --legend-progress-line: #f59e0b;
+  --legend-pending-line: #9fb3bb;
 }
 /* tema-oscuro:fin */
 
@@ -543,6 +636,9 @@ h3 { letter-spacing: -.025em; }
 .canvas-header-bar { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; background: var(--canvas-surface); border-bottom: 1px solid var(--line); font-size: 11px; flex-wrap: wrap; gap: 10px; }
 .canvas-legend { display: flex; gap: 14px; align-items: center; color: var(--ink-soft); font-size: 11px; }
 .legend-indicator { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.legend-indicator.mastered { box-shadow: inset 0 0 0 1.5px var(--legend-mastered-line); }
+.legend-indicator.in-progress { box-shadow: inset 0 0 0 1.5px var(--legend-progress-line); }
+.legend-indicator.pending { box-shadow: inset 0 0 0 1.5px var(--legend-pending-line); }
 .legend-indicator.mastered { background: var(--teal); }
 .legend-indicator.in-progress { background: var(--legend-surface); }
 .legend-indicator.pending { background: var(--legend-surface-2); }
@@ -569,6 +665,8 @@ h3 { letter-spacing: -.025em; }
 .canvas-toggle-btn:hover { background: var(--phase-surface); border-color: var(--teal); color: var(--ink); }
 
 .flow-canvas-wrapper { height: clamp(620px, calc(100vh - 280px), 880px); width: 100%; position: relative; background: var(--canvas-surface); }
+/* Con colorMode="dark", React Flow pinta su propio fondo: se deja transparente para que se vea el del lienzo. */
+.flow-canvas-wrapper .react-flow { --xy-background-color: transparent; }
 @media (min-width: 781px) { .map-scroll-hint { display: none; } }
 
 /* Custom Phase Column Header Nodes */

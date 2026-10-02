@@ -49,6 +49,9 @@ function App() {
   const [focusRequest, setFocusRequest] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
   const [theme, setTheme] = useTheme()
+  // Tema resuelto (para componentes que no usan los tokens CSS, como React Flow): con «Sistema», el del sistema en vivo.
+  const systemDark = useMediaQuery('(prefers-color-scheme: dark)')
+  const resolvedTheme = theme === 'system' ? (systemDark ? 'dark' : 'light') : theme
   const menuButtonRef = useRef<HTMLButtonElement>(null)
   const mainRef = useRef<HTMLElement>(null)
 
@@ -222,7 +225,7 @@ function App() {
         {study.savedMock && !session && view !== 'mock' && <ResumeMockPanel mock={study.savedMock} discardLabel="Descartar" onResume={study.resumeMock} onDiscard={study.discardSavedMock} />}
         <div className={`content-wrap ${view === 'map' ? 'content-wrap-wide' : ''}`}>
           {view === 'home' && <HomeView modules={modulesWithQuestions} progress={progress} continueTarget={continueTarget} overallPercentage={overallPercentage} overallScore={overallScore} attemptedQuestionCount={attemptedQuestionCount} onStart={() => openModule(continueTarget.id)} onMap={() => navigate('map')} onMock={startMock} onOpenModule={openModule} />}
-          {view === 'map' && <ErrorBoundary fallback={(retry) => <div className="loading-state" role="alert">No se ha podido cargar el mapa. Comprueba la conexión y <button type="button" className="text-button" onClick={retry}>vuelve a intentarlo</button>, o recarga la página.</div>}><Suspense fallback={<p className="loading-state" role="status">Cargando el mapa…</p>}><MapView progress={progress} onOpenModule={openModule} onQuickQuiz={(id) => startModuleQuiz('quick', id)} onFullQuiz={(id) => startModuleQuiz('full', id)} onPractice={openPractices} /></Suspense></ErrorBoundary>}
+          {view === 'map' && <ErrorBoundary fallback={(retry) => <div className="loading-state" role="alert">No se ha podido cargar el mapa. Comprueba la conexión y <button type="button" className="text-button" onClick={retry}>vuelve a intentarlo</button>, o recarga la página.</div>}><Suspense fallback={<p className="loading-state" role="status">Cargando el mapa…</p>}><MapView progress={progress} colorMode={resolvedTheme} onOpenModule={openModule} onQuickQuiz={(id) => startModuleQuiz('quick', id)} onFullQuiz={(id) => startModuleQuiz('full', id)} onPractice={openPractices} /></Suspense></ErrorBoundary>}
           {view === 'module' && <ModuleView module={selectedModule} progress={progress} onOpenModule={openModule} onOpenSection={(sectionId) => goToSection(selectedModule.id, sectionId)} onPracticeSection={study.startSection} onQuick={() => startModuleQuiz('quick')} onFull={() => startModuleQuiz('full')} onPractice={() => openPractices(selectedModule.id)} />}
           {view === 'mock' && !session && study.savedMock && <ResumeMockPanel mock={study.savedMock} discardLabel="Descartar y empezar uno nuevo" onResume={study.resumeMock} onDiscard={() => { study.discardSavedMock(); study.startMock() }} />}
           {inQuiz && session && !study.done && study.reviewing && <MockReviewView session={session} answers={study.answers} flagged={study.flagged} secondsLeft={study.secondsLeft} onJump={study.jump} onBack={study.closeReview} onConfirm={study.complete} />}
