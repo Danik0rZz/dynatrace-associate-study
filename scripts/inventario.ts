@@ -4,11 +4,16 @@
  * 1. Sincroniza docs/plan-apartados.csv con la guía: añade los apartados nuevos como «pendiente»,
  *    elimina los que ya no existen y actualiza los títulos. Nunca cambia una valoración ya escrita.
  * 2. Regenera docs/inventario-apartados.csv, docs/inventario-preguntas.csv y docs/inventario.md.
- * 3. Muestra los problemas abiertos (los mismos que hacen fallar src/tests/inventory.test.ts).
+ * 3. Regenera los índices ligeros de la app: src/data/generated/guide-index.json y question-index.json.
+ * 4. Muestra los problemas abiertos (los mismos que hacen fallar src/tests/inventory.test.ts).
  */
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { precisionFacts, studyGuide } from '../src/data/guide'
+import { modules } from '../src/data/modules'
+import { allQuestions } from '../src/data/questions'
 import { buildInventory, parsePlan, renderPlan, renderQuestionsCsv, renderSectionsCsv, renderSummary, syncPlan } from '../src/lib/inventory'
+import { buildGuideIndex, buildQuestionIndex, renderIndexJson } from '../src/lib/light-index'
 
 const root = resolve(import.meta.dirname ?? '.', '..')
 const file = (name: string) => resolve(root, 'docs', name)
@@ -30,6 +35,12 @@ writeFileSync(planPath, renderPlan(plan))
 writeFileSync(file('inventario-apartados.csv'), renderSectionsCsv(rows))
 writeFileSync(file('inventario-preguntas.csv'), renderQuestionsCsv())
 writeFileSync(file('inventario.md'), renderSummary(rows, problems))
+
+// Índices ligeros de la app (guía por bloque e índice de preguntas), generados desde los datos completos.
+const generated = (name: string) => resolve(root, 'src', 'data', 'generated', name)
+mkdirSync(resolve(root, 'src', 'data', 'generated'), { recursive: true })
+writeFileSync(generated('guide-index.json'), renderIndexJson(buildGuideIndex(modules, studyGuide, precisionFacts)))
+writeFileSync(generated('question-index.json'), renderIndexJson(buildQuestionIndex(allQuestions)))
 
 const withoutQuestions = rows.filter((row) => row.preguntas === 0).length
 console.log(`Apartados: ${rows.length} · con preguntas: ${rows.length - withoutQuestions} · sin preguntas: ${withoutQuestions}`)

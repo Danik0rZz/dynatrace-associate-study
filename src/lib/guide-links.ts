@@ -1,6 +1,6 @@
-import { precisionFacts, studyGuide } from '../data/guide'
+import { sectionIndexEntry } from '../data/guide-index'
 import { allQuestions } from '../data/questions'
-import type { PrecisionFact, Question, StudySection } from '../data/types'
+import type { PrecisionFact, PrecisionFactSheet, Question, StudyChapter, StudySection } from '../data/types'
 import { normalizeText } from './guide-text'
 
 /**
@@ -21,11 +21,13 @@ export type GuideRef = {
 
 const stripNumber = (title: string) => title.replace(/^\d+\.\s*/, '')
 
-export const sectionFor = (moduleId: string, sectionId: string): StudySection | undefined =>
-  studyGuide[moduleId]?.sections.find((section) => section.id === sectionId)
+/** Apartado dentro de la guía ya cargada de un bloque. */
+export const sectionFor = (chapter: StudyChapter | undefined, sectionId: string): StudySection | undefined =>
+  chapter?.sections.find((section) => section.id === sectionId)
 
+/** Título sin número, desde el índice ligero (síncrono: no hace falta tener la guía cargada). */
 export const sectionTitle = (moduleId: string, sectionId: string): string =>
-  sectionId === PRECISION_SECTION ? 'Hechos de precisión' : stripNumber(sectionFor(moduleId, sectionId)?.title ?? sectionId)
+  sectionId === PRECISION_SECTION ? 'Hechos de precisión' : stripNumber(sectionIndexEntry(moduleId, sectionId)?.title ?? sectionId)
 
 export const guideRefFor = (question: Question): GuideRef | undefined => {
   const entry = question.guide
@@ -48,8 +50,8 @@ export const questionIdsForSection = (moduleId: string, sectionId: string): stri
   questionIdsBySection[sectionKey(moduleId, sectionId)] ?? []
 
 /** Filas de la ficha de precisión que contienen la evidencia (o toda la ficha si no se localiza). */
-export const precisionRowsFor = (moduleId: string, evidence: string): PrecisionFact[] => {
-  const rows = precisionFacts[moduleId]?.rows ?? []
+export const precisionRowsFor = (sheet: PrecisionFactSheet | undefined, evidence: string): PrecisionFact[] => {
+  const rows = sheet?.rows ?? []
   const needle = normalizeText(evidence)
   const matching = rows.filter((row) => normalizeText(`${row.topic} · ${row.fact} · ${row.examNote}`).includes(needle))
   return matching.length ? matching : rows

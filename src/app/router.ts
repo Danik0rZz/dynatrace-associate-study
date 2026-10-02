@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { precisionFacts, studyGuide } from '../data/guide'
+import { hasPrecisionSheet, sectionIndexEntry } from '../data/guide-index'
 import { modulesWithQuestions } from '../data/questions'
 import { PRECISION_SECTION } from '../lib/guide-links'
 import type { View } from './types'
@@ -32,7 +32,8 @@ const BY_SEGMENT = Object.fromEntries(Object.entries(STATIC).map(([view, segment
 
 const isModule = (id: string | undefined): id is string => Boolean(id) && modulesWithQuestions.some((module) => module.id === id)
 const isSection = (moduleId: string, sectionId: string) =>
-  sectionId === PRECISION_SECTION ? Boolean(precisionFacts[moduleId]) : Boolean(studyGuide[moduleId]?.sections.some((section) => section.id === sectionId))
+  // Se valida con el índice ligero: la guía completa se carga por bloque y no está disponible al resolver la ruta.
+  sectionId === PRECISION_SECTION ? hasPrecisionSheet(moduleId) : Boolean(sectionIndexEntry(moduleId, sectionId))
 
 export const isRouteHash = (hash: string): boolean => hash === '' || hash === '#' || hash.startsWith('#/')
 

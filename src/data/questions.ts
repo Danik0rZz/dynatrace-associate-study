@@ -1,9 +1,9 @@
-import { blocks } from './blocks'
+import { blockQuestions } from './blocks/questions'
 import { modules } from './modules'
 import type { Module, Question, QuestionBucket } from './types'
 
-/** Banco de preguntas vigente, en el orden de los bloques. */
-export const allQuestions: Question[] = modules.flatMap((module) => blocks[module.id]?.questions ?? [])
+/** Banco de preguntas vigente, en el orden de los bloques. (No importa la guía: esa se carga por bloque.) */
+export const allQuestions: Question[] = modules.flatMap((module) => blockQuestions[module.id] ?? [])
 
 export const questionsById: Record<string, Question> = Object.fromEntries(allQuestions.map((question) => [question.id, question]))
 export const questionsByModule: Record<string, Question[]> = Object.fromEntries(

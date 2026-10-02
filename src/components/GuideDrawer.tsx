@@ -2,7 +2,7 @@ import { useRef } from 'react'
 import { useModalFocus } from '../app/useModalFocus'
 import { InlineText } from './InlineText'
 import { PrecisionFactsView, StudySectionView } from './StudySection'
-import { precisionFacts } from '../data/guide'
+import { useBlockGuide } from '../data/guide-loader'
 import { modules } from '../data/modules'
 import { PRECISION_SECTION, precisionRowsFor, sectionFor, type GuideRef } from '../lib/guide-links'
 
@@ -16,9 +16,13 @@ export function GuideDrawer({ guide, inSession, onClose, onOpenInGuide }: { guid
   // Al abrir: foco en «Cerrar». Esc cierra, Tab no sale del panel y al cerrar el foco vuelve a donde estaba.
   useModalFocus(panelRef, closeRef, onClose)
 
+  // La guía del bloque se carga bajo demanda: mientras llega, un estado anunciado (la frase clave ya se ve).
+  const block = useBlockGuide(guide.moduleId)
+  const chapter = block.status === 'ready' ? block.chapter : undefined
+  const precision = block.status === 'ready' ? block.precision : undefined
   const module = modules.find((item) => item.id === guide.moduleId)
-  const section = guide.sectionId === PRECISION_SECTION ? undefined : sectionFor(guide.moduleId, guide.sectionId)
-  const sheet = guide.sectionId === PRECISION_SECTION ? precisionFacts[guide.moduleId] : undefined
+  const section = guide.sectionId === PRECISION_SECTION ? undefined : sectionFor(chapter, guide.sectionId)
+  const sheet = guide.sectionId === PRECISION_SECTION ? precision : undefined
 
   return <div className="guide-drawer-layer" role="presentation" onClick={onClose}>
     <aside ref={panelRef} className="guide-drawer" role="dialog" aria-modal="true" aria-label={`Guía de estudio: ${guide.title}`} onClick={(event) => event.stopPropagation()}>
@@ -28,9 +32,11 @@ export function GuideDrawer({ guide, inSession, onClose, onOpenInGuide }: { guid
       </header>
       <div className="guide-drawer-body">
         <div className="guide-evidence"><span className="eyebrow">LA CLAVE EN LA GUÍA</span><p>«<InlineText text={guide.evidence} />»</p></div>
+        {block.status === 'loading' && <p className="loading-state" role="status">Cargando el apartado…</p>}
+        {block.status === 'error' && <p className="empty-state" role="alert">No se ha podido cargar la guía. Comprueba la conexión y vuelve a abrir el panel.</p>}
         {section && <StudySectionView section={section} moduleId={guide.moduleId} headingLevel="h3" anchor={false} />}
-        {sheet && <PrecisionFactsView factSheet={sheet} rows={precisionRowsFor(guide.moduleId, guide.evidence)} anchor={false} />}
-        {!section && !sheet && <p className="empty-state">No se ha encontrado este apartado en la guía.</p>}
+        {sheet && <PrecisionFactsView factSheet={sheet} rows={precisionRowsFor(sheet, guide.evidence)} anchor={false} />}
+        {block.status === 'ready' && !section && !sheet && <p className="empty-state">No se ha encontrado este apartado en la guía.</p>}
       </div>
       <footer className="guide-drawer-footer">
         <button type="button" className="button-outline" onClick={onOpenInGuide}>{inSession ? 'Abrir en el bloque (termina la sesión)' : 'Abrir en el bloque'} <b>↗</b></button>
