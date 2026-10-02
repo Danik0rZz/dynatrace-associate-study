@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react'
-import { allQuestions, questionsById, questionsByModule } from '../data/questions'
+import { questionIndex, questionIndexByModule, questionMetaById } from '../data/question-catalog'
+import { loadedQuestion, loadQuestions, questionsLoaded } from '../data/question-loader'
 import type { Question } from '../data/types'
 import { questionIdsForSection, sectionTitle } from '../lib/guide-links'
 import { appendMockHistory, buildMockHistoryEntry } from '../lib/mock-history'
-import { clearSavedMock, loadSavedMock, saveMock, secondsUntil, type SavedMock } from '../lib/mock-session'
+import { clearSavedMock, loadSavedMock, parseSavedMock, saveMock, secondsUntil, type SavedMock } from '../lib/mock-session'
 import { recordAttempt, type ProgressState } from '../lib/progress'
 import { adaptiveReviewIds, fullBankIds, loadServed, mockExamIds, optionOrders, quickQuizIds, rememberServed } from '../lib/selection'
 import { MOCK_DURATION_SECONDS, type Confidence, type QuizMode, type Session } from './types'
@@ -14,7 +15,20 @@ import { MOCK_DURATION_SECONDS, type Confidence, type QuizMode, type Session } f
  *
  * El simulacro en curso se guarda en localStorage a cada cambio (ver `lib/mock-session.ts`) y su tiempo se
  * calcula a partir de un `deadline` absoluto, así que sobrevive a recargas y cierres de la pestaña.
+ *
+ * Las preguntas se eligen con el catálogo ligero, pero su texto se carga por bloque: antes de mostrar una sesión se
+ * descargan los bloques de sus preguntas (`preparing`). El simulacro fija su `deadline` cuando ya está todo cargado;
+ * si la carga falla, no arranca (ni temporizador ni simulacro guardado) y se puede reintentar.
  */
+
+/** Sesión pedida cuyas preguntas se están descargando, o cuya descarga ha fallado. */
+export type Preparing = { mode: QuizMode; title: string; status: 'loading' | 'error' | 'incompatible'; resume: boolean }
+
+const fullQuestion = (id: string): Question => {
+  const question = loadedQuestion(id)
+  if (!question) throw new Error(`Pregunta sin cargar: ${id}`)
+  return question
+}
 export function useStudySession(progress: ProgressState, setProgress: Dispatch<SetStateAction<ProgressState>>, onStart: (mode: QuizMode) => void) {
   const [session, setSession] = useState<Session | null>(null)
   const [index, setIndex] = useState(0)
@@ -28,9 +42,13 @@ export function useStudySession(progress: ProgressState, setProgress: Dispatch<S
   const [flagged, setFlagged] = useState<string[]>([])
   const [reviewing, setReviewing] = useState(false)
   /** Simulacro guardado que se puede reanudar (al abrir la app o tras salir de uno en curso). */
-  const [savedMock, setSavedMock] = useState<SavedMock | null>(() => loadSavedMock(questionsById))
+  const [savedMock, setSavedMock] = useState<SavedMock | null>(() => loadSavedMock(questionMetaById))
+  const [preparing, setPreparing] = useState<Preparing | null>(null)
+  /** Cada petición de sesión invalida las anteriores: una descarga que llega tarde no arranca nada. */
+  const ticket = useRef(0)
+  const retryRef = useRef<(() => void) | null>(null)
 
-  const currentQuestion = session ? questionsById[session.questionIds[index]] : undefined
+  const currentQuestion = session ? loadedQuestion(session.questionIds[index]) : undefined
   const mockInProgress = Boolean(session && session.mode === 'mock' && !done)
   const secondsLeft = deadline === null ? MOCK_DURATION_SECONDS : secondsUntil(deadline, now)
 
@@ -51,21 +69,60 @@ export function useStudySession(progress: ProgressState, setProgress: Dispatch<S
     setNow(Date.now())
   }
 
-  const start = (mode: QuizMode, questionIds: string[], title: string, moduleId?: string, sectionId?: string) => {
-    rememberServed(questionIds)
-    setSession({ mode, questionIds, title, moduleId, sectionId, optionOrderByQuestionId: optionOrders(questionIds.map((id) => questionsById[id])) })
-    reset()
-    if (mode === 'mock') {
-      clearSavedMock()
-      setSavedMock(null)
-      setDeadline(Date.now() + MOCK_DURATION_SECONDS * 1000)
+  /**
+   * Descarga el texto de `questionIds` y después ejecuta `begin` (que monta la sesión). Si ya está cargado, la sesión
+   * arranca en el acto; si no, se cambia de pantalla con el estado de carga anunciado.
+   */
+  const prepare = (mode: QuizMode, title: string, questionIds: string[], begin: () => void, resume = false) => {
+    const current = ++ticket.current
+    if (questionsLoaded(questionIds)) {
+      retryRef.current = null
+      setPreparing(null)
+      begin()
+      onStart(mode)
+      return
     }
+    const run = () => {
+      setPreparing({ mode, title, status: 'loading', resume })
+      loadQuestions(questionIds).then(() => {
+        if (current !== ticket.current) return
+        retryRef.current = null
+        setPreparing(null)
+        begin()
+      }, () => {
+        if (current === ticket.current) setPreparing({ mode, title, status: 'error', resume })
+      })
+    }
+    retryRef.current = run
+    setSession(null)
+    setDone(false)
+    setReviewing(false)
+    run()
     onStart(mode)
   }
+  /** Vuelve a intentar la descarga que ha fallado. */
+  const retryPreparing = () => retryRef.current?.()
 
-  /** Cierra la sesión. Un simulacro sin entregar queda guardado para reanudarlo. */
+  const start = (mode: QuizMode, questionIds: string[], title: string, moduleId?: string, sectionId?: string) => {
+    prepare(mode, title, questionIds, () => {
+      rememberServed(questionIds)
+      setSession({ mode, questionIds, title, moduleId, sectionId, optionOrderByQuestionId: optionOrders(questionIds.map(fullQuestion)) })
+      reset()
+      if (mode === 'mock') {
+        clearSavedMock()
+        setSavedMock(null)
+        // El tiempo empieza a contar con todas las preguntas ya descargadas.
+        setDeadline(Date.now() + MOCK_DURATION_SECONDS * 1000)
+      }
+    })
+  }
+
+  /** Cierra la sesión. Un simulacro sin entregar queda guardado para reanudarlo. Cancela una descarga en curso. */
   const close = () => {
     if (mockInProgress) setSavedMock(mockSnapshot())
+    ticket.current += 1
+    retryRef.current = null
+    setPreparing(null)
     setSession(null)
     setDone(false)
     setReviewing(false)
@@ -73,35 +130,48 @@ export function useStudySession(progress: ProgressState, setProgress: Dispatch<S
   }
 
   const startModuleQuiz = (mode: 'quick' | 'full', moduleId: string, moduleTitle: string) => {
-    const pool = questionsByModule[moduleId]
+    const pool = questionIndexByModule[moduleId] ?? []
     const ids = mode === 'quick' ? quickQuizIds(pool, progress, loadServed()) : fullBankIds(pool)
     start(mode, ids, `${mode === 'quick' ? 'Quiz rápido' : 'Banco completo'} · ${moduleTitle}`, moduleId)
   }
-  const startMock = () => start('mock', mockExamIds(allQuestions, progress, loadServed()), 'Simulacro · 60 preguntas')
+  const startMock = () => start('mock', mockExamIds(questionIndex, progress, loadServed()), 'Simulacro · 60 preguntas')
   const startReview = () => {
-    const ids = adaptiveReviewIds(allQuestions, progress)
+    const ids = adaptiveReviewIds(questionIndex, progress)
     if (ids.length) start('review', ids, 'Repaso adaptativo')
   }
   const startSection = (moduleId: string, sectionId: string) => {
     const ids = questionIdsForSection(moduleId, sectionId)
-    if (ids.length) start('section', fullBankIds(ids.map((id) => questionsById[id])), `Apartado · ${sectionTitle(moduleId, sectionId)}`, moduleId, sectionId)
+    if (ids.length) start('section', fullBankIds(ids.map((id) => ({ id }))), `Apartado · ${sectionTitle(moduleId, sectionId)}`, moduleId, sectionId)
   }
   const retry = (ids: string[]) => {
-    if (ids.length) start('review', fullBankIds(ids.map((id) => questionsById[id])), 'Repetir fallos')
+    if (ids.length) start('review', fullBankIds(ids.map((id) => ({ id }))), 'Repetir fallos')
   }
 
-  /** Reanuda el simulacro guardado. Si su tiempo ya ha vencido, se entrega solo con las respuestas guardadas. */
+  /**
+   * Reanuda el simulacro guardado, tras descargar sus preguntas. Manda el `deadline` guardado: si vence durante la
+   * descarga, se entrega al terminar con las respuestas guardadas. Si el texto cargado no casa con lo guardado
+   * (opciones que han cambiado), se descarta.
+   */
   const resumeMock = () => {
     if (!savedMock) return
-    setSession({ mode: 'mock', title: savedMock.title, questionIds: savedMock.questionIds, optionOrderByQuestionId: savedMock.optionOrderByQuestionId })
-    reset()
-    setIndex(savedMock.index)
-    setAnswers(savedMock.answers)
-    setConfidenceByQuestion(savedMock.confidenceByQuestion)
-    setFlagged(savedMock.flagged)
-    setDeadline(savedMock.deadline)
-    setSavedMock(null)
-    onStart('mock')
+    const saved = savedMock
+    prepare('mock', saved.title, saved.questionIds, () => {
+      const bank = Object.fromEntries(saved.questionIds.map((id) => [id, fullQuestion(id)]))
+      if (!parseSavedMock(JSON.stringify(saved), bank)) {
+        clearSavedMock()
+        setSavedMock(null)
+        setPreparing({ mode: 'mock', title: saved.title, status: 'incompatible', resume: true })
+        return
+      }
+      setSession({ mode: 'mock', title: saved.title, questionIds: saved.questionIds, optionOrderByQuestionId: saved.optionOrderByQuestionId })
+      reset()
+      setIndex(saved.index)
+      setAnswers(saved.answers)
+      setConfidenceByQuestion(saved.confidenceByQuestion)
+      setFlagged(saved.flagged)
+      setDeadline(saved.deadline)
+      setSavedMock(null)
+    }, true)
   }
   const discardSavedMock = () => {
     clearSavedMock()
@@ -141,12 +211,12 @@ export function useStudySession(progress: ProgressState, setProgress: Dispatch<S
   const complete = () => {
     if (!session || done) return
     if (session.mode === 'mock') {
-      setProgress((current) => session.questionIds.reduce((next, id) => recordAttempt(next, questionsById[id], answers[id] ?? [], confidenceByQuestion[id] ?? 3), current))
+      setProgress((current) => session.questionIds.reduce((next, id) => recordAttempt(next, fullQuestion(id), answers[id] ?? [], confidenceByQuestion[id] ?? 3), current))
       clearSavedMock()
       // El inicio se deduce del deadline, así que también vale para un simulacro reanudado.
       if (deadline !== null) {
         const total = MOCK_DURATION_SECONDS * 1000
-        appendMockHistory(buildMockHistoryEntry(session.questionIds.map((id) => questionsById[id]), answers, deadline - total, Math.min(Date.now(), deadline), MOCK_DURATION_SECONDS))
+        appendMockHistory(buildMockHistoryEntry(session.questionIds.map(fullQuestion), answers, deadline - total, Math.min(Date.now(), deadline), MOCK_DURATION_SECONDS))
       }
     }
     setDone(true)
@@ -197,8 +267,8 @@ export function useStudySession(progress: ProgressState, setProgress: Dispatch<S
 
   return {
     session, index, answers, confidence, confidenceByQuestion, feedbackQuestionId, done, secondsLeft, flagged, currentQuestion,
-    mockInProgress, reviewing, savedMock,
-    start, close, startModuleQuiz, startMock, startReview, startSection, retry, resumeMock, discardSavedMock,
+    mockInProgress, reviewing, savedMock, preparing,
+    start, close, retryPreparing, startModuleQuiz, startMock, startReview, startSection, retry, resumeMock, discardSavedMock,
     toggleAnswer, setQuestionConfidence, submit, next, back, jump, toggleFlag, openReview, closeReview, complete,
   }
 }

@@ -98,7 +98,7 @@ const reviewPriority = (cause: Attempt): number => cause.correct ? 2 : cause.con
  * a secas: tras un fallo con confianza 5 y un acierto con confianza 4, la pregunta sigue en el grupo 1.
  * Dentro de cada grupo, de la respondida hace más tiempo (según su último intento) a la más reciente.
  */
-export const dueQuestionIds = (progress: ProgressState, questions: readonly Question[]): string[] =>
+export const dueQuestionIds = (progress: ProgressState, questions: readonly Pick<Question, 'id'>[]): string[] =>
   questions
     .flatMap((question) => {
       const cause = reviewCause(progress.attempts[question.id])

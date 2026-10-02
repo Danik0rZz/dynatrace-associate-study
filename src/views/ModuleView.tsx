@@ -9,13 +9,13 @@ import { bucketLabels } from '../app/labels'
 import { hasSectionVisual } from '../components/visuals/index-ids'
 import { guideIndex } from '../data/guide-index'
 import { loadBlockGuide, useBlockGuide } from '../data/guide-loader'
-import { modulesWithQuestions, questionsByModule } from '../data/questions'
+import { modulesWithQuestions, questionIndexByModule } from '../data/question-catalog'
 import { studyGuides } from '../data/study-guides'
 import { type ProgressState, moduleCompletion } from '../lib/progress'
 import { safeSetItem } from '../lib/safe-storage'
 
 export function ModuleView({ module, progress, onOpenModule, onOpenSection, onPracticeSection, onQuick, onFull, onPractice }: { module: Module; progress: ProgressState; onOpenModule: (moduleId: string) => void; onOpenSection: (sectionId: string) => void; onPracticeSection: (moduleId: string, sectionId: string) => void; onQuick: () => void; onFull: () => void; onPractice: () => void }) {
-  const questions = questionsByModule[module.id]
+  const questions = questionIndexByModule[module.id] ?? []
   const completion = moduleCompletion(progress, module.questionIds)
   const translatedGuide = studyGuides[module.id] ?? [`${module.summary} En esta lectura, el objetivo es entender el lugar de este apartado dentro de la plataforma y poder explicarlo con vocabulario técnico preciso.`, `La documentación oficial se ha convertido aquí en una guía de estudio en español: conserva nombres de producto, aplicaciones, entidades y sintaxis en inglés, y traduce el criterio operativo que debes aplicar.`, `La práctica se concentra en ${module.focus}. Contrasta siempre la explicación con los enlaces oficiales del panel de documentación y con la variante de producto que estés utilizando.`]
   // La guía y la ficha de precisión del bloque se cargan al abrirlo (un chunk por bloque).

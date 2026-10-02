@@ -1,4 +1,5 @@
 import type { Attempt, Question } from '../data/types'
+import type { QuestionIndexEntry } from './light-index'
 import { safeSetItem } from './safe-storage'
 
 /**
@@ -30,11 +31,16 @@ const isRecord = (value: unknown): value is Record<string, unknown> => Boolean(v
 const isStringArray = (value: unknown): value is string[] => Array.isArray(value) && value.every((item) => typeof item === 'string')
 const sameSet = (left: string[], right: string[]) => left.length === right.length && new Set(left).size === left.length && left.every((id) => right.includes(id))
 
+/** Banco contra el que se valida: preguntas completas o el catálogo ligero (que lleva los ids de las opciones). */
+export type MockBank = Record<string, Pick<Question, 'options'> | Pick<QuestionIndexEntry, 'optionIds'>>
+const optionIdsOf = (entry: MockBank[string]): string[] => 'optionIds' in entry ? entry.optionIds : entry.options.map((option) => option.id)
+
 /**
- * Valida un simulacro guardado contra el banco actual. Devuelve `null` si el JSON está dañado o ya no es
- * compatible (preguntas u opciones que ya no existen, índices fuera de rango…).
+ * Valida un simulacro guardado contra el banco actual (el catálogo al arrancar; el texto cargado al reanudar).
+ * Devuelve `null` si el JSON está dañado o ya no es compatible (preguntas u opciones que ya no existen, índices
+ * fuera de rango…).
  */
-export const parseSavedMock = (raw: string | null, questionsById: Record<string, Question>): SavedMock | null => {
+export const parseSavedMock = (raw: string | null, questionsById: MockBank): SavedMock | null => {
   if (!raw) return null
   let data: unknown
   try {
@@ -47,15 +53,14 @@ export const parseSavedMock = (raw: string | null, questionsById: Record<string,
   if (!isStringArray(questionIds) || !questionIds.length || new Set(questionIds).size !== questionIds.length) return null
   const questions = questionIds.map((id) => questionsById[id])
   if (questions.some((question) => !question)) return null
-  const optionIds = (question: Question) => question.options.map((option) => option.id)
   if (!isRecord(optionOrderByQuestionId) || !isRecord(answers) || !isRecord(confidenceByQuestion)) return null
-  for (const question of questions) {
-    const order = optionOrderByQuestionId[question.id]
-    if (!isStringArray(order) || !sameSet(order, optionIds(question))) return null
+  for (const [position, question] of questions.entries()) {
+    const order = optionOrderByQuestionId[questionIds[position]]
+    if (!isStringArray(order) || !sameSet(order, optionIdsOf(question))) return null
   }
   for (const [id, selected] of Object.entries(answers)) {
     const question = questionsById[id]
-    if (!questionIds.includes(id) || !isStringArray(selected) || !selected.every((optionId) => optionIds(question).includes(optionId))) return null
+    if (!questionIds.includes(id) || !isStringArray(selected) || !selected.every((optionId) => optionIdsOf(question).includes(optionId))) return null
   }
   for (const [id, value] of Object.entries(confidenceByQuestion)) {
     if (!questionIds.includes(id) || !Number.isInteger(value) || (value as number) < 1 || (value as number) > 5) return null
@@ -85,7 +90,7 @@ export const clearSavedMock = (): void => {
 }
 
 /** Lee el simulacro guardado; si está dañado o es incompatible, lo borra y devuelve `null`. */
-export const loadSavedMock = (questionsById: Record<string, Question>): SavedMock | null => {
+export const loadSavedMock = (questionsById: MockBank): SavedMock | null => {
   let raw: string | null = null
   try {
     raw = typeof window !== 'undefined' ? window.localStorage.getItem(MOCK_SESSION_KEY) : null

@@ -1,5 +1,5 @@
 import { sectionIndexEntry } from '../data/guide-index'
-import { allQuestions } from '../data/questions'
+import { questionIndex } from '../data/question-catalog'
 import type { PrecisionFact, PrecisionFactSheet, Question, StudyChapter, StudySection } from '../data/types'
 import { normalizeText } from './guide-text'
 
@@ -38,11 +38,9 @@ export const guideRefFor = (question: Question): GuideRef | undefined => {
 const sectionKey = (moduleId: string, sectionId: string) => `${moduleId}::${sectionId}`
 
 const questionIdsBySection: Record<string, string[]> = {}
-for (const question of allQuestions) {
-  const ref = question.guide
-  if (!ref) continue
-  const key = sectionKey(question.moduleId, ref.section)
-  ;(questionIdsBySection[key] ??= []).push(question.id)
+for (const entry of questionIndex) {
+  if (!entry.section) continue
+  ;(questionIdsBySection[sectionKey(entry.moduleId, entry.section)] ??= []).push(entry.id)
 }
 
 /** Preguntas del banco que se responden con un apartado concreto de la guía. */

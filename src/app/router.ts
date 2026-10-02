@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { hasPrecisionSheet, sectionIndexEntry } from '../data/guide-index'
-import { modulesWithQuestions } from '../data/questions'
+import { modulesWithQuestions } from '../data/question-catalog'
 import { PRECISION_SECTION } from '../lib/guide-links'
 import type { View } from './types'
 
