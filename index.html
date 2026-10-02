@@ -3,7 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#07111f" />
+    <meta name="theme-color" content="#f5f7f6" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0e181b" media="(prefers-color-scheme: dark)" />
+    <!-- Tema sin parpadeo: aplica la preferencia guardada (clave y formato JSON de src/app/theme.ts) antes del primer pintado. -->
+    <script>
+      (function () {
+        try {
+          var value = JSON.parse(localStorage.getItem('dynatrace-associate-theme-v1') || 'null')
+          if (value === 'light' || value === 'dark') document.documentElement.setAttribute('data-theme', value)
+        } catch (error) {
+          /* sin almacenamiento o valor no válido: tema del sistema */
+        }
+      })()
+    </script>
     <meta name="description" content="Material de estudio no oficial, sin relación con Dynatrace: plan de estudio y banco de preguntas de elaboración propia para preparar la certificación Dynatrace Associate." />
     <title>Study Lab · Preparación no oficial para Dynatrace Associate</title>
   </head>

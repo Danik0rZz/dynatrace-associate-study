@@ -1,6 +1,8 @@
 import { navItems } from '../app/labels'
 import type { View } from '../app/types'
+import type { ThemePreference } from '../app/theme'
 import { BackupTools } from './BackupTools'
+import { ThemePicker } from './ThemePicker'
 import type { Module } from '../data/types'
 
 type SidebarProps = {
@@ -13,10 +15,12 @@ type SidebarProps = {
   onOpenModule: (moduleId: string) => void
   /** Se llama tras exportar o elegir un fichero para importar (el menú móvil se cierra). */
   onBackupAction?: () => void
+  theme: ThemePreference
+  onThemeChange: (value: ThemePreference) => void
 }
 
-/** Barra lateral fija: navegación, ruta actual y copia de seguridad del progreso. En móvil se muestra dentro del menú. */
-export function Sidebar({ view, collapsed, routeModule, onToggle, onNavigate, onStartMock, onOpenModule, onBackupAction }: SidebarProps) {
+/** Barra lateral fija: navegación, ruta actual, copia de seguridad y tema. En móvil se muestra dentro del menú. */
+export function Sidebar({ view, collapsed, routeModule, onToggle, onNavigate, onStartMock, onOpenModule, onBackupAction, theme, onThemeChange }: SidebarProps) {
   return (
     <aside className="sidebar">
       <div className="brand-lockup">
@@ -44,6 +48,7 @@ export function Sidebar({ view, collapsed, routeModule, onToggle, onNavigate, on
           <span className="route-arrow" aria-hidden="true">↗</span>
         </button>
         <BackupTools onDone={onBackupAction} />
+        <ThemePicker value={theme} onChange={onThemeChange} />
         <p className="sidebar-note">Todo el contenido enlaza con documentación oficial para poder verificar cada decisión.</p>
       </div>
     </aside>

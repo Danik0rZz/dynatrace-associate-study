@@ -12,6 +12,7 @@
     "test:watch": "vitest",
     "lint": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.node.json --noEmit && eslint .",
     "inventario": "vite-node scripts/inventario.ts",
+    "tema": "vite-node scripts/tema-oscuro.ts",
     "check": "npm run lint && npm test && npm run build"
   },
   "dependencies": {

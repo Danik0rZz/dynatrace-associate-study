@@ -3,6 +3,7 @@ import { DialogHost } from './components/Dialog'
 import { confirmDialog, isDialogOpen, subscribeDialogs } from './lib/dialogs'
 import { navItems } from './app/labels'
 import { HOME, useHashRouter, type Route } from './app/router'
+import { useTheme } from './app/theme'
 import { useMediaQuery } from './app/useMediaQuery'
 import { useStoredState } from './app/storage'
 import type { View } from './app/types'
@@ -47,6 +48,7 @@ function App() {
   const [guide, setGuide] = useState<GuideRef | null>(null)
   const [focusRequest, setFocusRequest] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [theme, setTheme] = useTheme()
   const menuButtonRef = useRef<HTMLButtonElement>(null)
   const mainRef = useRef<HTMLElement>(null)
 
@@ -198,7 +200,7 @@ function App() {
   const dialogOpen = useSyncExternalStore(subscribeDialogs, isDialogOpen, () => false)
   const breadcrumb = view === 'home' ? 'Inicio' : navItems.find((item) => item.id === view)?.label ?? selectedModule.title
   const menuVisible = mobile && menuOpen
-  const sidebar = <Sidebar view={view} collapsed={collapsed} routeModule={routeModule} onToggle={() => setSidebarCollapsed((collapsed) => !collapsed)} onNavigate={navigate} onStartMock={startMock} onOpenModule={openModule} onBackupAction={() => setMenuOpen(false)} />
+  const sidebar = <Sidebar view={view} collapsed={collapsed} routeModule={routeModule} onToggle={() => setSidebarCollapsed((collapsed) => !collapsed)} onNavigate={navigate} onStartMock={startMock} onOpenModule={openModule} onBackupAction={() => setMenuOpen(false)} theme={theme} onThemeChange={setTheme} />
 
   return (
     <>
