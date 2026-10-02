@@ -79,6 +79,15 @@ npm run check        # todo lo anterior (lo mismo que ejecuta GitHub Actions ant
 `.github/workflows/deploy.yml` publica en GitHub Pages cada push a `main`, solo si pasan tipos, ESLint, tests y compilación.
 La app usa rutas relativas (`base: './'` en `vite.config.ts`), así que funciona en cualquier subcarpeta.
 
+## Cómo actualizar la app
+
+Antes de subir nada, ejecuta `npm run check` en local.
+
+- **Cambios pequeños** (una corrección de texto, una pregunta, un ajuste puntual): commit y push directo a `main`.
+- **Cambios grandes** (un apartado o bloque nuevo, muchas preguntas, cambios en el código de la app): en una rama aparte, con un PR contra `main`.
+  - El workflow `deploy.yml` también se ejecuta en cada PR, pero ahí solo comprueba, no publica.
+  - Haz el merge solo cuando todos los checks del PR estén en verde. Al llegar a `main`, se publica.
+
 ## Código de la app
 
 - `src/App.tsx`: estructura y navegación. `src/app/`: tipos, etiquetas, sesión de preguntas (`useStudySession`), almacenamiento local y copia de seguridad.
