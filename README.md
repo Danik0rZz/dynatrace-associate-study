@@ -1,4 +1,4 @@
-# Dynatrace Associate Study Lab
+# Study Lab · Preparación no oficial para Dynatrace Associate
 
 ## Aviso
 

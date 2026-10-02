@@ -15,7 +15,7 @@ export function HomeView({ modules: moduleList, progress, continueTarget: active
         <div className="hero-copy">
           <p className="eyebrow">PREPARACIÓN TÉCNICA · 2026</p>
           <h1>Convierte el path en<br /><em>criterio operativo.</em></h1>
-          <p className="hero-lede">Una ruta de estudio en español para dominar la certificación Associate: conceptos, precisión, escenarios y decisiones con evidencia oficial.</p>
+          <p className="hero-lede">Una ruta de estudio en español para dominar la certificación Associate: conceptos, precisión, escenarios y decisiones con evidencia de la documentación oficial.</p>
           <div className="hero-actions"><button className="button-primary" onClick={onStart} aria-describedby="continue-target">Continuar ruta <span>→</span></button><button className="button-quiet" onClick={onMap}>Explorar mapa <span>↗</span></button></div>
           <div className="hero-source-line"><span className="source-check">✓</span> Enlaces a la documentación oficial de Dynatrace por módulo y por pregunta</div>
         </div>
