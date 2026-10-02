@@ -10,6 +10,7 @@ import { ResumeMockPanel } from './components/ResumeMockPanel'
 import { StorageWarning } from './components/StorageWarning'
 import { allQuestions, modulesWithQuestions } from './data/questions'
 import { guideRefFor, type GuideRef } from './lib/guide-links'
+import { continueModule, LAST_MODULE_KEY } from './lib/route'
 import { dueQuestionIds, latestAttempt, loadProgress, saveProgress, type ProgressState } from './lib/progress'
 import { ErrorHistoryView } from './views/ErrorHistoryView'
 import { GlossaryView } from './views/GlossaryView'
@@ -31,6 +32,7 @@ function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useStoredState<boolean>('dynatrace-associate-sidebar-collapsed', false)
   const [selectedModuleId, setSelectedModuleId] = useState('platform')
   const [progress, setProgress] = useState<ProgressState>(() => loadProgress())
+  const [lastModuleId, setLastModuleId] = useStoredState<string | null>(LAST_MODULE_KEY, null)
   const [practiceDone, setPracticeDone] = useStoredState<string[]>('dynatrace-associate-practices-v1', [])
   const [glossarySearch, setGlossarySearch] = useState('')
   const [guide, setGuide] = useState<GuideRef | null>(null)
@@ -49,7 +51,8 @@ function App() {
   const routeModule = currentQuestion ? modulesWithQuestions.find((module) => module.id === currentQuestion.moduleId) ?? selectedModule : selectedModule
   const attemptedQuestionCount = allQuestions.filter((question) => (progress.attempts[question.id] ?? []).length > 0).length
   const overallScore = allQuestions.reduce((sum, question) => sum + (latestAttempt(progress, question.id)?.score ?? 0), 0)
-  const overallPercentage = Math.round((attemptedQuestionCount / allQuestions.length) * 100)
+  const continueTarget = continueModule(modulesWithQuestions, progress, typeof lastModuleId === 'string' ? lastModuleId : null)
+  const overallPercentage =Math.round((attemptedQuestionCount / allQuestions.length) * 100)
 
   /** Salir de un simulacro en curso pide confirmación; si se acepta, queda guardado para reanudarlo. */
   const confirmLeave = () => !study.mockInProgress || window.confirm('Tienes un simulacro en curso. Si sales, quedará guardado para reanudarlo, pero el tiempo seguirá corriendo. ¿Quieres salir?')
@@ -66,6 +69,7 @@ function App() {
     if (!confirmLeave()) return false
     scrollToTop()
     setSelectedModuleId(moduleId)
+    setLastModuleId(moduleId)
     setView('module')
     study.close()
     return true
@@ -159,7 +163,7 @@ function App() {
         <StorageWarning />
         {study.savedMock && !session && view !== 'mock' && <ResumeMockPanel mock={study.savedMock} discardLabel="Descartar" onResume={study.resumeMock} onDiscard={study.discardSavedMock} />}
         <div className={`content-wrap ${view === 'map' ? 'content-wrap-wide' : ''}`}>
-          {view === 'home' && <HomeView modules={modulesWithQuestions} progress={progress} overallPercentage={overallPercentage} overallScore={overallScore} attemptedQuestionCount={attemptedQuestionCount} onStart={() => openModule('platform')} onMap={() => navigate('map')} onMock={startMock} onOpenModule={openModule} />}
+          {view === 'home' && <HomeView modules={modulesWithQuestions} progress={progress} continueTarget={continueTarget} overallPercentage={overallPercentage} overallScore={overallScore} attemptedQuestionCount={attemptedQuestionCount} onStart={() => openModule(continueTarget.id)} onMap={() => navigate('map')} onMock={startMock} onOpenModule={openModule} />}
           {view === 'map' && <ErrorBoundary fallback={(retry) => <div className="loading-state" role="alert">No se ha podido cargar el mapa. Comprueba la conexión y <button type="button" className="text-button" onClick={retry}>vuelve a intentarlo</button>, o recarga la página.</div>}><Suspense fallback={<p className="loading-state" role="status">Cargando el mapa…</p>}><MapView progress={progress} onOpenModule={openModule} onQuickQuiz={(id) => startModuleQuiz('quick', id)} onFullQuiz={(id) => startModuleQuiz('full', id)} onPractice={openPractices} /></Suspense></ErrorBoundary>}
           {view === 'module' && <ModuleView module={selectedModule} progress={progress} onOpenModule={openModule} onPracticeSection={study.startSection} onQuick={() => startModuleQuiz('quick')} onFull={() => startModuleQuiz('full')} onPractice={() => openPractices(selectedModule.id)} />}
           {view === 'mock' && !session && study.savedMock && <ResumeMockPanel mock={study.savedMock} discardLabel="Descartar y empezar uno nuevo" onResume={study.resumeMock} onDiscard={() => { study.discardSavedMock(); study.startMock() }} />}
