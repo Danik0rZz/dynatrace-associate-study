@@ -43,6 +43,8 @@ describe('barra lateral colapsada guardada', () => {
     setViewport(true)
     render(<App />)
     expect(document.querySelector('.app-shell')!.classList.contains('sidebar-collapsed')).toBe(false)
+    // En móvil la navegación está dentro del menú.
+    fireEvent.click(screen.getByRole('button', { name: /Menú/ }))
     expect(screen.getByRole('navigation', { name: 'Navegación principal' }).textContent).toContain('Glosario')
   })
 })

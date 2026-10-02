@@ -10,6 +10,7 @@ import { useStudySession } from './app/useStudySession'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { GuideDrawer } from './components/GuideDrawer'
 import { Sidebar } from './components/Sidebar'
+import { MobileHeader, MobileMenu } from './components/MobileMenu'
 import { ResumeMockPanel } from './components/ResumeMockPanel'
 import { StorageWarning } from './components/StorageWarning'
 import { allQuestions, modulesWithQuestions, questionsById } from './data/questions'
@@ -44,6 +45,8 @@ function App() {
   const [glossarySearch, setGlossarySearch] = useState('')
   const [guide, setGuide] = useState<GuideRef | null>(null)
   const [focusRequest, setFocusRequest] = useState(0)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuButtonRef = useRef<HTMLButtonElement>(null)
   const mainRef = useRef<HTMLElement>(null)
 
   useEffect(() => { saveProgress(progress) }, [progress])
@@ -82,6 +85,8 @@ function App() {
     setPendingAnchor(next.sectionId ?? null)
     if (!next.sectionId) scrollToTop()
     setFocusRequest((count) => count + 1)
+    // Al navegar (también desde el menú móvil) el menú se cierra; el foco va al <main> como en cualquier cambio de ruta.
+    setMenuOpen(false)
   }
   const { route, go } = useHashRouter({
     guard,
@@ -191,15 +196,19 @@ function App() {
   const collapsed = Boolean(sidebarCollapsed) && !mobile
   const dialogOpen = useSyncExternalStore(subscribeDialogs, isDialogOpen, () => false)
   const breadcrumb = view === 'home' ? 'Study Lab' : navItems.find((item) => item.id === view)?.label ?? selectedModule.title
+  const menuVisible = mobile && menuOpen
+  const sidebar = <Sidebar view={view} collapsed={collapsed} routeModule={routeModule} onToggle={() => setSidebarCollapsed((collapsed) => !collapsed)} onNavigate={navigate} onStartMock={startMock} onOpenModule={openModule} onBackupAction={() => setMenuOpen(false)} />
 
   return (
     <>
     {/* Con un diálogo abierto, el resto de la app queda inerte (ni foco ni clics). */}
     <div className={`app-shell ${collapsed ? 'sidebar-collapsed' : ''} ${inQuiz && session && !study.done ? 'session-active' : ''}`} inert={dialogOpen}>
       <a className="skip-link" href="#main-content" onClick={skipToContent}>Saltar al contenido</a>
-      <Sidebar view={view} collapsed={collapsed} routeModule={routeModule} onToggle={() => setSidebarCollapsed((collapsed) => !collapsed)} onNavigate={navigate} onStartMock={startMock} onOpenModule={openModule} />
+      {/* En móvil, la misma barra lateral vive dentro del menú; en su lugar se ve la cabecera con el botón «Menú». */}
+      {mobile ? <MobileHeader title={breadcrumb} open={menuVisible} onOpen={() => setMenuOpen(true)} buttonRef={menuButtonRef} /> : sidebar}
+      {menuVisible && <MobileMenu onClose={() => setMenuOpen(false)}>{sidebar}</MobileMenu>}
 
-      <main className="main-content" id="main-content" tabIndex={-1} ref={mainRef}>
+      <main className="main-content" id="main-content" tabIndex={-1} ref={mainRef} inert={menuVisible}>
         <header className="topbar">
           <nav className="breadcrumbs" aria-label="Ruta de navegación"><span>Dynatrace</span><span className="crumb-separator" aria-hidden="true">/</span><span>Associate Certification</span><span className="crumb-separator" aria-hidden="true">/</span><strong aria-current="page">{breadcrumb}</strong></nav>
           <div className="topbar-meta"><span className="status-pulse" aria-hidden="true" /> Progreso guardado localmente <span className="topbar-divider" aria-hidden="true" /> <span>{attemptedQuestionCount}/{allQuestions.length} revisadas</span></div>
