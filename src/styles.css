@@ -14,6 +14,7 @@
   --teal-dark: #06635a;
   --navy: #112f39;
   --coral: #b9472d;
+  --highlight: #ffe58a;
   --shadow: 0 16px 50px rgba(35, 62, 66, .08);
 }
 
@@ -891,6 +892,29 @@ h3 { letter-spacing: -.025em; }
 .filter-field select { border: 0; padding: 12px 0; color: var(--ink); background: transparent; font-size: 12px; max-width: 260px; }
 .filter-field:focus-within { outline: 3px solid #0b5fa5; outline-offset: 2px; }
 .glossary-count { margin: 0; color: var(--ink-soft); font-size: 12px; }
+.search-box { display: grid; gap: 6px; max-width: 640px; }
+.search-box label { color: var(--ink); font-size: 12px; font-weight: 700; }
+.search-count { margin: 0; color: var(--ink-soft); font-size: 12px; }
+.search-results { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.search-result { padding: 14px 18px; border: 1px solid var(--line); background: var(--paper); }
+.search-result a { display: grid; gap: 2px; color: var(--ink); text-decoration: none; }
+.search-result a:hover strong, .search-result a:focus-visible strong { text-decoration: underline; }
+.search-result-module { color: var(--teal-dark); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.search-result p { margin: 8px 0 0; color: var(--ink-soft); font-size: 13px; line-height: 1.55; }
+.search-result mark { background: var(--highlight); color: var(--ink); padding: 0 1px; }
+.stats-table-wrap { overflow-x: auto; }
+.stats-table { width: 100%; border-collapse: collapse; font-size: 13px; color: var(--ink); }
+.stats-table caption { text-align: left; color: var(--ink-soft); font-size: 12px; padding-bottom: 10px; }
+.stats-table th, .stats-table td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.stats-table thead th { color: var(--ink-soft); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+.stats-table tbody th { font-weight: 600; white-space: nowrap; }
+.score-chart { margin: 0; }
+.score-chart svg { width: 100%; height: auto; display: block; }
+.score-chart figcaption { margin-top: 8px; color: var(--ink-soft); font-size: 12px; }
+.score-chart-grid { stroke: var(--line); stroke-width: 1; }
+.score-chart-label { fill: var(--ink-soft); font-size: 11px; }
+.score-chart-line { fill: none; stroke: var(--teal-dark); stroke-width: 2.5; }
+.score-chart-point { fill: var(--paper); stroke: var(--teal-dark); stroke-width: 2.5; }
 .glossary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .glossary-card { padding: 20px; border: 1px solid var(--line); background: #fff; min-height: 135px; }
 .glossary-card > div { display: flex; justify-content: space-between; gap: 8px; align-items: start; }

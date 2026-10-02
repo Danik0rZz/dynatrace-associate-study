@@ -22,7 +22,9 @@ import { ModuleView } from './views/ModuleView'
 import { PracticeView } from './views/PracticeView'
 import { QuizView } from './views/QuizView'
 import { ReviewView } from './views/ReviewView'
+import { SearchView } from './views/SearchView'
 import { SessionResult } from './views/SessionResult'
+import { StatsView } from './views/StatsView'
 
 // El mapa usa React Flow, que es pesado: se descarga solo al abrirlo.
 const MapView = lazy(() => import('./components/MapView').then((module) => ({ default: module.MapView })))
@@ -189,7 +191,9 @@ function App() {
           {view === 'review' && !session && <ReviewView progress={progress} onStart={study.startReview} onOpenModule={openModule} />}
           {view === 'errors' && <ErrorHistoryView progress={progress} onOpenModule={openModule} onOpenGuide={openGuide} />}
           {view === 'practice' && <PracticeView selectedModuleId={route.moduleId ?? ''} done={practiceDone} onToggle={togglePractice} onOpenModule={openModule} />}
-          {view === 'glossary' && <GlossaryView search={glossarySearch} onSearch={setGlossarySearch} onOpenModule={openModule} />}
+          {view === 'search' && <SearchView onOpen={(next) => { go(next) }} />}
+          {view === 'stats' && <StatsView />}
+          {view === 'glossary' &&<GlossaryView search={glossarySearch} onSearch={setGlossarySearch} onOpenModule={openModule} />}
         </div>
       </main>
       {guide && <GuideDrawer guide={guide} inSession={Boolean(session && !study.done)} onClose={() => setGuide(null)} onOpenInGuide={() => goToSection(guide.moduleId, guide.sectionId)} />}

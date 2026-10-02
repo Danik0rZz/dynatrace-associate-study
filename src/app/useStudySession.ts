@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 
 import { allQuestions, questionsById, questionsByModule } from '../data/questions'
 import type { Question } from '../data/types'
 import { questionIdsForSection, sectionTitle } from '../lib/guide-links'
+import { appendMockHistory, buildMockHistoryEntry } from '../lib/mock-history'
 import { clearSavedMock, loadSavedMock, saveMock, secondsUntil, type SavedMock } from '../lib/mock-session'
 import { recordAttempt, type ProgressState } from '../lib/progress'
 import { adaptiveReviewIds, fullBankIds, loadServed, mockExamIds, optionOrders, quickQuizIds, rememberServed } from '../lib/selection'
@@ -142,6 +143,11 @@ export function useStudySession(progress: ProgressState, setProgress: Dispatch<S
     if (session.mode === 'mock') {
       setProgress((current) => session.questionIds.reduce((next, id) => recordAttempt(next, questionsById[id], answers[id] ?? [], confidenceByQuestion[id] ?? 3), current))
       clearSavedMock()
+      // El inicio se deduce del deadline, así que también vale para un simulacro reanudado.
+      if (deadline !== null) {
+        const total = MOCK_DURATION_SECONDS * 1000
+        appendMockHistory(buildMockHistoryEntry(session.questionIds.map((id) => questionsById[id]), answers, deadline - total, Math.min(Date.now(), deadline), MOCK_DURATION_SECONDS))
+      }
     }
     setDone(true)
     setReviewing(false)
