@@ -2,7 +2,7 @@ import { useMemo, useState, type MouseEvent } from 'react'
 import { formatRoute, type Route } from '../app/router'
 import { glossary } from '../data/glossary'
 import { useAllBlockGuides } from '../data/guide-loader'
-import { modulesWithQuestions } from '../data/questions'
+import { modulesWithQuestions } from '../data/question-catalog'
 import { buildSearchIndex, MAX_RESULTS, MIN_QUERY_LENGTH, searchDocs, type SearchResult } from '../lib/search-index'
 
 const routeFor = (result: SearchResult): Route => ({ view: 'module', moduleId: result.moduleId, sectionId: result.sectionId })

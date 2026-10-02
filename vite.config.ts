@@ -6,16 +6,16 @@ export default defineConfig({
   base: './',
   plugins: [react()],
   build: {
-    // El contenido de estudio (guía + 1.175 preguntas) es texto y pesa ~2,5 MB sin comprimir (~0,6 MB gzip):
-    // va en su propio fichero para que el navegador lo guarde en caché aparte del código.
-    chunkSizeWarningLimit: 3000,
+    // El contenido de estudio (guía + 1.175 preguntas) es texto: se descarga por bloque y solo cuando hace falta.
     rollupOptions: {
       output: {
         manualChunks: (id) => {
           // Guía y ficha de precisión: un chunk por bloque, descargado al abrirlo (src/data/guide-loader.ts).
           const guide = id.match(/\/src\/data\/blocks\/([^/]+)\/(?:guide|precision)\.ts$/)
           if (guide) return `guide-${guide[1]}`
-          if (id.includes('/src/data/blocks/')) return 'content'
+          // Preguntas: un chunk por bloque, descargado al empezar una sesión (src/data/question-loader.ts).
+          const questions = id.match(/\/src\/data\/blocks\/([^/]+)\/questions\.ts$/)
+          if (questions) return `questions-${questions[1]}`
           if (id.includes('node_modules/react') || id.includes('node_modules/scheduler')) return 'react'
           return undefined
         },

@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useMediaQuery } from '../app/useMediaQuery'
-import { modulesWithQuestions } from '../data/questions'
+import { modulesWithQuestions } from '../data/question-catalog'
 import { loadMockHistory, type MockHistoryEntry } from '../lib/mock-history'
 
 const moduleTitle = (id: string) => modulesWithQuestions.find((module) => module.id === id)?.title ?? id

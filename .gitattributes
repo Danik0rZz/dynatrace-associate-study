@@ -1,0 +1,6 @@
+# Ficheros generados por `npm run inventario`: se escriben siempre con LF. Fijar LF en la copia de trabajo
+# evita que git los marque como modificados en Windows (core.autocrlf) cuando el contenido no ha cambiado.
+src/data/generated/*.json text eol=lf
+docs/plan-apartados.csv text eol=lf
+docs/inventario*.csv text eol=lf
+docs/inventario.md text eol=lf

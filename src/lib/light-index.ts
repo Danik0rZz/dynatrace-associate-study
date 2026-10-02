@@ -4,7 +4,8 @@ import type { Module, PrecisionFactSheet, Question, StudyChapter } from '../data
  * Índices ligeros, GENERADOS por `npm run inventario` a partir de los datos completos (nunca a mano):
  * - guía: apartados (id y título numerado) por bloque y si el bloque tiene ficha de precisión. Lo usa la app de forma
  *   síncrona (router, títulos de apartado) mientras la guía completa se carga por bloque.
- * - preguntas: metadatos de cada pregunta, para la carga diferida del banco (PR 11b) y los PR 12-13.
+ * - preguntas: metadatos de cada pregunta. La app los usa de forma síncrona (selección, contadores, repaso, validación
+ *   del simulacro guardado) mientras el texto de las preguntas se carga por bloque (question-loader.ts).
  * Un test falla si los ficheros generados no coinciden con los datos.
  */
 
@@ -19,6 +20,8 @@ export type QuestionIndexEntry = {
   bucket: Question['bucket']
   /** Número de opciones correctas (las múltiples piden «Selecciona N»). */
   correctCount: number
+  /** Ids de las opciones, en el orden del banco: validan el simulacro guardado sin cargar el texto. */
+  optionIds: string[]
   hasStimulus: boolean
   lastVerified: string
 }
@@ -37,6 +40,7 @@ export const buildQuestionIndex = (questions: readonly Question[]): QuestionInde
   type: question.type,
   bucket: question.bucket,
   correctCount: question.correctOptionIds.length,
+  optionIds: question.options.map((option) => option.id),
   hasStimulus: Boolean(question.stimulus),
   lastVerified: question.lastVerified,
 }))

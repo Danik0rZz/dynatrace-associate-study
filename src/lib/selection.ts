@@ -10,7 +10,12 @@ import { safeSetItem } from './safe-storage'
  * - Rotación: dentro de cada pool se prioriza lo menos practicado y lo no servido recientemente,
  *   así dos sesiones seguidas no repiten las mismas preguntas mientras queden otras sin ver.
  * - El orden de las opciones se baraja de forma independiente en cada pregunta y sesión.
+ *
+ * La selección solo usa id, bloque y tipo (`bucket`): funciona con el catálogo ligero, sin cargar el texto.
  */
+
+/** Lo que la selección necesita de cada pregunta (lo tienen tanto `Question` como el catálogo ligero). */
+export type Selectable = Pick<Question, 'id' | 'moduleId' | 'bucket'>
 
 export type RandomSource = () => number
 
@@ -58,7 +63,7 @@ export const rememberServed = (ids: string[]): void => {
  * Ordena un pool por frescura: primero lo nunca respondido, luego lo menos practicado;
  * dentro de cada nivel, lo no servido recientemente; los empates se resuelven al azar.
  */
-export const byFreshness = (questions: readonly Question[], progress: ProgressState, served: readonly string[] = [], random: RandomSource = cryptoRandom): Question[] => {
+export const byFreshness = <T extends Pick<Question, 'id'>>(questions: readonly T[], progress: ProgressState, served: readonly string[] = [], random: RandomSource = cryptoRandom): T[] => {
   const recency = new Map(served.map((id, index) => [id, served.length - index]))
   const randomized = shuffle(questions, random)
   return randomized
@@ -70,14 +75,14 @@ export const byFreshness = (questions: readonly Question[], progress: ProgressSt
 const QUICK_TARGET: Record<QuestionBucket, number> = { practical: 1, troubleshooting: 1, scenario: 3, precision: 2, knowledge: 1 }
 
 /** Quiz rápido de un módulo: 8 preguntas con mezcla de tipos, rotando el pool. */
-export const quickQuizIds = (questions: readonly Question[], progress: ProgressState, served: readonly string[] = [], size = 8, random: RandomSource = cryptoRandom): string[] => {
+export const quickQuizIds = (questions: readonly Selectable[], progress: ProgressState, served: readonly string[] = [], size = 8, random: RandomSource = cryptoRandom): string[] => {
   const ordered = byFreshness(questions, progress, served, random)
   // La mezcla de tipos solo se aplica dentro del nivel más fresco del pool, para no reintroducir repetidas.
-  const attempts = (question: Question) => progress.attempts[question.id]?.length ?? 0
+  const attempts = (question: Selectable) => progress.attempts[question.id]?.length ?? 0
   const freshest = ordered.length ? attempts(ordered[0]) : 0
   const tier = ordered.filter((question) => attempts(question) === freshest)
   const candidates = tier.length >= size ? tier : ordered.slice(0, size)
-  const picked: Question[] = []
+  const picked: Selectable[] = []
   for (const bucket of Object.keys(QUICK_TARGET) as QuestionBucket[]) {
     picked.push(...candidates.filter((question) => question.bucket === bucket).slice(0, QUICK_TARGET[bucket]))
   }
@@ -87,15 +92,15 @@ export const quickQuizIds = (questions: readonly Question[], progress: ProgressS
 }
 
 /** Banco completo de un módulo en orden aleatorio. */
-export const fullBankIds = (questions: readonly Question[], random: RandomSource = cryptoRandom): string[] =>
+export const fullBankIds = (questions: readonly Pick<Question, 'id'>[], random: RandomSource = cryptoRandom): string[] =>
   shuffle(questions, random).map((question) => question.id)
 
 /**
  * Simulacro: reparto proporcional al tamaño de cada módulo (método del mayor resto),
  * rotando dentro de cada módulo y barajando el orden final.
  */
-export const mockExamIds = (questions: readonly Question[], progress: ProgressState, served: readonly string[] = [], size = 60, random: RandomSource = cryptoRandom): string[] => {
-  const byModule = new Map<string, Question[]>()
+export const mockExamIds = (questions: readonly Selectable[], progress: ProgressState, served: readonly string[] = [], size = 60, random: RandomSource = cryptoRandom): string[] => {
+  const byModule = new Map<string, Selectable[]>()
   for (const question of questions) byModule.set(question.moduleId, [...(byModule.get(question.moduleId) ?? []), question])
   const total = questions.length
   const quotas = [...byModule.entries()].map(([moduleId, pool]) => {
@@ -117,9 +122,9 @@ export const mockExamIds = (questions: readonly Question[], progress: ProgressSt
  * prioridad, en orden barajado. Con la cola vacía no hay repaso.
  */
 export const REVIEW_SESSION_SIZE = 24
-export const adaptiveReviewIds = (questions: readonly Question[], progress: ProgressState, limit = REVIEW_SESSION_SIZE, random: RandomSource = cryptoRandom): string[] =>
+export const adaptiveReviewIds = (questions: readonly Pick<Question, 'id'>[], progress: ProgressState, limit = REVIEW_SESSION_SIZE, random: RandomSource = cryptoRandom): string[] =>
   shuffle(dueQuestionIds(progress, questions).slice(0, limit), random)
 
 /** Orden aleatorio e independiente de las opciones de cada pregunta. */
-export const optionOrders = (questions: readonly Question[], random: RandomSource = cryptoRandom): Record<string, string[]> =>
+export const optionOrders = (questions: readonly Pick<Question, 'id' | 'options'>[], random: RandomSource = cryptoRandom): Record<string, string[]> =>
   Object.fromEntries(questions.map((question) => [question.id, shuffle(question.options.map((option) => option.id), random)]))

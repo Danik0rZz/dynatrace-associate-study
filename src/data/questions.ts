@@ -2,7 +2,10 @@ import { blockQuestions } from './blocks/questions'
 import { modules } from './modules'
 import type { Module, Question, QuestionBucket } from './types'
 
-/** Banco de preguntas vigente, en el orden de los bloques. (No importa la guía: esa se carga por bloque.) */
+/**
+ * Banco de preguntas COMPLETO, en el orden de los bloques: solo para Node (inventario) y los tests. La app usa el
+ * catálogo ligero (question-catalog.ts) y carga el texto por bloque (question-loader.ts); un test lo comprueba.
+ */
 export const allQuestions: Question[] = modules.flatMap((module) => blockQuestions[module.id] ?? [])
 
 export const questionsById: Record<string, Question> = Object.fromEntries(allQuestions.map((question) => [question.id, question]))

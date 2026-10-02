@@ -1,4 +1,4 @@
-import { modulesWithQuestions } from './questions'
+import { modulesWithQuestions } from './question-catalog'
 
 export type GlossaryEntry = {
   term: string

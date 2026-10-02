@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { glossary } from '../data/glossary'
-import { modulesWithQuestions } from '../data/questions'
+import { modulesWithQuestions } from '../data/question-catalog'
 import { matchesSearch } from '../lib/search'
 
 const glossaryModules = modulesWithQuestions.filter((module) => glossary.some((entry) => entry.moduleId === module.id))

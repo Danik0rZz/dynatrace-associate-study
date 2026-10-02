@@ -2,7 +2,7 @@ import { useMediaQuery } from '../app/useMediaQuery'
 import { BackupTools } from '../components/BackupTools'
 import { Disclaimer } from '../components/Disclaimer'
 import type { Module } from '../data/types'
-import { allQuestions } from '../data/questions'
+import { totalQuestions } from '../data/question-catalog'
 import { examProfile } from '../data/modules'
 import { type ProgressState, moduleCompletion } from '../lib/progress'
 
@@ -21,14 +21,14 @@ export function HomeView({ modules: moduleList, progress, continueTarget: active
         </div>
         <div className="hero-progress-card">
           <div className="progress-orbit" style={{ background: `conic-gradient(var(--teal) 0 ${overallPercentage}%, rgba(255,255,255,.15) ${overallPercentage}% 100%)` }}><div className="orbit-center"><strong>{overallPercentage}%</strong><span>revisado</span></div></div>
-          <div className="progress-card-copy"><span className="card-label">ESTADO DE LA RUTA</span><strong id="continue-target">{activeModule.title}</strong><span>{attemptedQuestionCount} de {allQuestions.length} preguntas practicadas</span></div>
+          <div className="progress-card-copy"><span className="card-label">ESTADO DE LA RUTA</span><strong id="continue-target">{activeModule.title}</strong><span>{attemptedQuestionCount} de {totalQuestions} preguntas practicadas</span></div>
           <div className="progress-card-footer"><span>Score acumulado</span><strong>{attemptedQuestionCount ? `${Math.round(overallScore / attemptedQuestionCount * 100)}%` : '—'}</strong></div>
         </div>
       </section>
 
       <section className="metric-strip">
         <Metric value="12" label="módulos" detail="del study path" />
-        <Metric value={String(allQuestions.length)} label="preguntas" detail="con explicación" />
+        <Metric value={String(totalQuestions)} label="preguntas" detail="con explicación" />
         <Metric value="60" label="simulacro" detail="práctica local" />
       </section>
 

@@ -14,8 +14,9 @@ import { Sidebar } from './components/Sidebar'
 import { Disclaimer } from './components/Disclaimer'
 import { MobileHeader, MobileMenu } from './components/MobileMenu'
 import { ResumeMockPanel } from './components/ResumeMockPanel'
+import { SessionPreparing } from './components/SessionPreparing'
 import { StorageWarning } from './components/StorageWarning'
-import { allQuestions, modulesWithQuestions, questionsById } from './data/questions'
+import { modulesWithQuestions, questionIndex, questionMetaById, totalQuestions } from './data/question-catalog'
 import { loadSavedMock } from './lib/mock-session'
 import { guideRefFor, type GuideRef } from './lib/guide-links'
 import { continueModule, LAST_MODULE_KEY } from './lib/route'
@@ -59,10 +60,12 @@ function App() {
 
   /**
    * Al llegar con «Atrás»/«Adelante» o al recargar en una ruta de sesión que ya no existe (las sesiones de quiz no se
-   * guardan; el simulacro solo si está guardado), se va a inicio.
+   * guardan; el simulacro solo si está guardado), se va a inicio. Una sesión que se está descargando cuenta como sesión.
    */
-  const normalizeRoute = (next: Route): Route =>
-    (next.view === 'quiz' && !study.session) || (next.view === 'mock' && !study.session && !study.savedMock) ? HOME : next
+  const normalizeRoute = (next: Route): Route => {
+    const active = Boolean(study.session || study.preparing)
+    return (next.view === 'quiz' && !active) || (next.view === 'mock' && !active && !study.savedMock) ? HOME : next
+  }
   /**
    * Salir de un simulacro en curso pide confirmación (también con «Atrás»); si se acepta, queda guardado para reanudarlo.
    * El diálogo es asíncrono y la guarda del router no: con un simulacro en curso la guarda cancela siempre (el router
@@ -99,7 +102,7 @@ function App() {
     onChange: onRouteChange,
     normalize: normalizeRoute,
     // Al abrir la app no hay ninguna sesión de quiz; un simulacro solo si quedó guardado.
-    normalizeInitial: (next) => next.view === 'quiz' || (next.view === 'mock' && !loadSavedMock(questionsById)) ? HOME : next,
+    normalizeInitial: (next) => next.view === 'quiz' || (next.view === 'mock' && !loadSavedMock(questionMetaById)) ? HOME : next,
   })
   const view = route.view
   const [selectedModuleId, setSelectedModuleId] = useState(route.moduleId ?? 'platform')
@@ -118,10 +121,10 @@ function App() {
 
   const selectedModule = modulesWithQuestions.find((module) => module.id === (view === 'module' ? route.moduleId : selectedModuleId)) ?? modulesWithQuestions[0]
   const routeModule = currentQuestion ? modulesWithQuestions.find((module) => module.id === currentQuestion.moduleId) ?? selectedModule : selectedModule
-  const attemptedQuestionCount = allQuestions.filter((question) => (progress.attempts[question.id] ?? []).length > 0).length
-  const overallScore = allQuestions.reduce((sum, question) => sum + (latestAttempt(progress, question.id)?.score ?? 0), 0)
+  const attemptedQuestionCount = questionIndex.filter((question) => (progress.attempts[question.id] ?? []).length > 0).length
+  const overallScore = questionIndex.reduce((sum, question) => sum + (latestAttempt(progress, question.id)?.score ?? 0), 0)
   const continueTarget = continueModule(modulesWithQuestions, progress, typeof lastModuleId === 'string' ? lastModuleId : null)
-  const overallPercentage = Math.round((attemptedQuestionCount / allQuestions.length) * 100)
+  const overallPercentage = Math.round((attemptedQuestionCount / totalQuestions) * 100)
 
   const navigate = (nextView: View) => { go({ view: nextView }) }
   const openModule = (moduleId: string): boolean => go({ view: 'module', moduleId })
@@ -229,7 +232,7 @@ function App() {
       <main className="main-content" id="main-content" tabIndex={-1} ref={mainRef} inert={menuVisible}>
         <header className="topbar">
           <nav className="breadcrumbs" aria-label="Ruta de navegación"><span>Study Lab</span><span className="crumb-separator" aria-hidden="true">/</span><span>Associate Certification</span><span className="crumb-separator" aria-hidden="true">/</span><strong aria-current="page">{breadcrumb}</strong></nav>
-          <div className="topbar-meta"><span className="status-pulse" aria-hidden="true" /> Progreso guardado localmente <span className="topbar-divider" aria-hidden="true" /> <span>{attemptedQuestionCount}/{allQuestions.length} revisadas</span></div>
+          <div className="topbar-meta"><span className="status-pulse" aria-hidden="true" /> Progreso guardado localmente <span className="topbar-divider" aria-hidden="true" /> <span>{attemptedQuestionCount}/{totalQuestions} revisadas</span></div>
         </header>
 
         <StorageWarning />
@@ -238,10 +241,11 @@ function App() {
           {view === 'home' && <HomeView modules={modulesWithQuestions} progress={progress} continueTarget={continueTarget} overallPercentage={overallPercentage} overallScore={overallScore} attemptedQuestionCount={attemptedQuestionCount} onStart={() => openModule(continueTarget.id)} onMap={() => navigate('map')} onMock={startMock} onOpenModule={openModule} />}
           {view === 'map' && <ErrorBoundary fallback={(retry) => <div className="loading-state" role="alert">No se ha podido cargar el mapa. Comprueba la conexión y <button type="button" className="text-button" onClick={retry}>vuelve a intentarlo</button>, o recarga la página.</div>}><Suspense fallback={<p className="loading-state" role="status">Cargando el mapa…</p>}><MapView progress={progress} colorMode={resolvedTheme} onOpenModule={openModule} onQuickQuiz={(id) => startModuleQuiz('quick', id)} onFullQuiz={(id) => startModuleQuiz('full', id)} onPractice={openPractices} /></Suspense></ErrorBoundary>}
           {view === 'module' && <ModuleView module={selectedModule} progress={progress} onOpenModule={openModule} onOpenSection={(sectionId) => goToSection(selectedModule.id, sectionId)} onPracticeSection={study.startSection} onQuick={() => startModuleQuiz('quick')} onFull={() => startModuleQuiz('full')} onPractice={() => openPractices(selectedModule.id)} />}
-          {view === 'mock' && !session && study.savedMock && <ResumeMockPanel mock={study.savedMock} discardLabel="Descartar y empezar uno nuevo" onResume={study.resumeMock} onDiscard={() => { study.discardSavedMock(); study.startMock() }} />}
+          {inQuiz && !session && study.preparing && <SessionPreparing preparing={study.preparing} onRetry={study.retryPreparing} onHome={() => navigate('home')} />}
+          {view === 'mock' && !session && !study.preparing && study.savedMock && <ResumeMockPanel mock={study.savedMock} discardLabel="Descartar y empezar uno nuevo" onResume={study.resumeMock} onDiscard={() => { study.discardSavedMock(); study.startMock() }} />}
           {inQuiz && session && !study.done && study.reviewing && <MockReviewView session={session} answers={study.answers} flagged={study.flagged} secondsLeft={study.secondsLeft} onJump={study.jump} onBack={study.closeReview} onConfirm={study.complete} />}
           {inQuiz && session && currentQuestion && !study.done && !study.reviewing && <QuizView session={session} question={currentQuestion} index={study.index} selected={study.answers[currentQuestion.id] ?? []} confidence={session.mode === 'mock' ? study.confidenceByQuestion[currentQuestion.id] ?? 3 : study.confidence} flagged={study.flagged.includes(currentQuestion.id)} secondsLeft={study.secondsLeft} feedbackVisible={study.feedbackQuestionId === currentQuestion.id} onToggleAnswer={(optionId) => study.toggleAnswer(currentQuestion, optionId)} onConfidence={(value) => study.setQuestionConfidence(currentQuestion, value)} onSubmit={study.submit} onNext={study.next} onToggleFlag={() => study.toggleFlag(currentQuestion.id)} onOpenGuide={() => openGuide(currentQuestion)} onBack={study.back} onJump={study.jump} onReview={study.openReview} />}
-          {inQuiz && session && study.done && <SessionResult session={session} answers={study.answers} flagged={study.flagged} onHome={() => navigate('home')} onReview={() => dueQuestionIds(progress, allQuestions).length ? study.startReview() : navigate('review')} onRetry={study.retry} onOpenGuide={setGuide} onModule={() => session.moduleId && session.sectionId ? goToSection(session.moduleId, session.sectionId) : session.moduleId ? openModule(session.moduleId) : navigate('home')} />}
+          {inQuiz && session && study.done && <SessionResult session={session} answers={study.answers} flagged={study.flagged} onHome={() => navigate('home')} onReview={() => dueQuestionIds(progress, questionIndex).length ? study.startReview() : navigate('review')} onRetry={study.retry} onOpenGuide={setGuide} onModule={() => session.moduleId && session.sectionId ? goToSection(session.moduleId, session.sectionId) : session.moduleId ? openModule(session.moduleId) : navigate('home')} />}
           {view === 'review' && !session && <ReviewView progress={progress} onStart={study.startReview} onOpenModule={openModule} />}
           {view === 'errors' && <ErrorHistoryView progress={progress} onOpenModule={openModule} onOpenGuide={openGuide} />}
           {view === 'practice' && <PracticeView selectedModuleId={route.moduleId ?? ''} done={practiceDone} onToggle={togglePractice} onOpenModule={openModule} />}

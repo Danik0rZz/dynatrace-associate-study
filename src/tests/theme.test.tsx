@@ -1,5 +1,5 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import App from '../App'
 import { THEME_KEY, themeAttribute } from '../app/theme'
 import { applyBackup, collectBackup, parseBackup } from '../lib/backup'
@@ -141,6 +141,9 @@ describe('preferencia de tema', () => {
 })
 
 describe('mapa: colorMode de React Flow', () => {
+  // El mapa (React Flow) se carga con lazy(): la primera importación del módulo puede tardar más que el segundo de
+  // waitFor si la máquina va cargada (era el timeout intermitente). Se importa antes, fuera del tiempo de los tests.
+  beforeAll(async () => { await import('../components/MapView') })
   const setSystemDark = (dark: boolean) => {
     window.matchMedia = ((query: string) => ({
       matches: dark && query === '(prefers-color-scheme: dark)',

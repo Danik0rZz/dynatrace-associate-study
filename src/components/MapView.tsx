@@ -10,7 +10,7 @@ import {
   type Edge,
   type NodeProps,
 } from '@xyflow/react'
-import { modulesWithQuestions, allQuestions } from '../data/questions'
+import { modulesWithQuestions, questionIndex, totalQuestions } from '../data/question-catalog'
 import { moduleCompletion, moduleScore, type ProgressState, latestAttempt } from '../lib/progress'
 import type { Module } from '../data/types'
 
@@ -299,10 +299,10 @@ export function MapView({ progress, colorMode = 'light', onOpenModule, onQuickQu
   }, [])
 
   const totalAttempted = useMemo(() => {
-    return allQuestions.filter((q) => Boolean(latestAttempt(progress, q.id))).length
+    return questionIndex.filter((q) => Boolean(latestAttempt(progress, q.id))).length
   }, [progress])
 
-  const globalCompletion = Math.round((totalAttempted / allQuestions.length) * 100)
+  const globalCompletion = Math.round((totalAttempted / totalQuestions) * 100)
 
   const selectedModule = useMemo(() => {
     return studyModules.find((m) => m.id === selectedModuleId) ?? studyModules[0]
@@ -691,7 +691,7 @@ export function MapView({ progress, colorMode = 'light', onOpenModule, onQuickQu
           <div className="summary-card-data">
             <span className="summary-card-label">PROGRESO CERTIFICACIÓN</span>
             <strong>
-              {totalAttempted} / {allQuestions.length}
+              {totalAttempted} / {totalQuestions}
             </strong>
             <span>preguntas completadas en el banco</span>
           </div>
