@@ -1,8 +1,8 @@
 /** Pantallas de la app. */
-export type View = 'home' | 'map' | 'module' | 'quiz' | 'review' | 'practice' | 'mock' | 'errors' | 'glossary' | 'search' | 'stats'
+export type View = 'home' | 'map' | 'module' | 'quiz' | 'custom' | 'review' | 'practice' | 'mock' | 'errors' | 'glossary' | 'search' | 'stats'
 
 /** Tipos de sesión de preguntas. */
-export type QuizMode = 'quick' | 'full' | 'review' | 'mock' | 'section'
+export type QuizMode = 'quick' | 'full' | 'review' | 'mock' | 'section' | 'custom'
 
 export type Confidence = 1 | 2 | 3 | 4 | 5
 

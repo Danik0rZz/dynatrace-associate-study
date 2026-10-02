@@ -15,6 +15,7 @@ export const navItems: { id: View; label: string; icon: string }[] = [
   { id: 'home', label: 'Inicio', icon: '⌂' },
   { id: 'map', label: 'Mapa de estudio', icon: '◈' },
   { id: 'review', label: 'Repaso adaptativo', icon: '↻' },
+  { id: 'custom', label: 'Quiz a medida', icon: '⚙' },
   { id: 'practice', label: 'Prácticas', icon: '⌁' },
   { id: 'mock', label: 'Simulacro', icon: '◷' },
   { id: 'errors', label: 'Errores', icon: '!' },

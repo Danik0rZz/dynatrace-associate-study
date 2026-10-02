@@ -25,6 +25,7 @@ export const CONTRAST_PAIRS: ContrastPair[] = [
   text('enlace / fondo', '--teal-dark', '--bg'),
   text('enlace / tarjeta', '--teal-dark', '--paper'),
   text('enlace / tinte', '--teal-dark', '--surface-tint'),
+  text('quiz a medida: detalle de la opción elegida', '--ink-soft', '--surface-tint'),
   text('acento / tarjeta', '--accent-text', '--paper'),
   text('acento / fondo', '--accent-text', '--bg'),
   text('código en línea', '--inline-text', '--paper-soft'),
