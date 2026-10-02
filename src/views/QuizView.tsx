@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import type { Confidence, Session } from '../app/types'
 import type { Question } from '../data/types'
 import { GuideLink } from '../components/GuideLink'
@@ -31,6 +32,18 @@ export function QuizView({ session, question, index, selected, confidence, flagg
     },
     flag: onToggleFlag,
   })
+  // Letras visibles (orden barajado) de las opciones correctas, para el encabezado del feedback.
+  const correctLetters = options.flatMap((option, position) => (question.correctOptionIds.includes(option.id) ? [String.fromCharCode(65 + position)] : []))
+
+  // Al pasar a otra pregunta en el quiz normal, el botón «Siguiente» desaparece: el foco va al enunciado nuevo.
+  // (En el simulacro el botón se queda y el foco sigue en él.) En la primera pregunta no se toca: lo decide el router.
+  const promptRef = useRef<HTMLHeadingElement>(null)
+  const previousQuestion = useRef(question.id)
+  useEffect(() => {
+    if (previousQuestion.current === question.id) return
+    previousQuestion.current = question.id
+    if (!mock) promptRef.current?.focus()
+  }, [question.id, mock])
   const lastKey = Math.min(options.length, 9)
   const mobile = useMediaQuery('(max-width: 780px)')
   const minutes = Math.floor(secondsLeft / 60).toString().padStart(2, '0')
@@ -39,18 +52,31 @@ export function QuizView({ session, question, index, selected, confidence, flagg
     <div className="quiz-topline"><div><p className="eyebrow">{mock ? 'MODO SIMULACRO' : session.mode === 'review' ? 'REPASO' : session.mode === 'section' ? 'PRÁCTICA POR APARTADO' : 'SESIÓN DE ESTUDIO'}</p><h1>{session.title}</h1></div><div className="quiz-counter"><strong>{String(index + 1).padStart(2, '0')}</strong><span>/ {session.questionIds.length}</span>{mock && <span className={`timer-readout ${secondsLeft < 300 ? 'urgent' : ''}`}>◷ {minutes}:{seconds}</span>}<div className="quiz-progress"><span style={{ width: `${((index + 1) / session.questionIds.length) * 100}%` }} /></div></div></div>
     <div className="quiz-layout"><section className="question-card">
       <div className="question-meta"><span className="module-origin">Módulo: {moduleTitle}</span><span className={`difficulty-pill ${question.difficulty}`}>{difficultyLabels[question.difficulty]}</span><span className="bucket-pill">{bucketLabels[question.bucket]}</span><span className="type-pill">{question.type === 'multiple' ? `Selecciona ${question.correctOptionIds.length}` : 'Una respuesta'}</span><button className={`flag-button ${flagged ? 'flagged' : ''}`} onClick={onToggleFlag}>{flagged ? '⚑' : '⚐'} Marcar</button></div>
-      <h2><InlineText text={question.promptEs} /></h2>
+      <h2 ref={promptRef} tabIndex={-1} className="question-prompt"><InlineText text={question.promptEs} /></h2>
       {question.stimulus && <div className="question-stimulus"><strong>{question.stimulus.title}</strong>{question.stimulus.kind === 'table' ? <table><thead><tr>{question.stimulus.columns.map((column) => <th key={column}>{column}</th>)}</tr></thead><tbody>{question.stimulus.rows.map((row, rowIndex) => <tr key={rowIndex}>{row.map((cell, cellIndex) => <td key={cellIndex}>{cell}</td>)}</tr>)}</tbody></table> : question.stimulus.kind === 'code' ? <pre><code>{question.stimulus.content}</code></pre> : <p>{question.stimulus.content}</p>}</div>}
       <p className="answer-hint">{question.type === 'multiple' ? `Selecciona exactamente ${question.correctOptionIds.length} respuestas.` : 'Selecciona la respuesta más precisa.'}</p>
       <fieldset className="options-list"><legend className="sr-only">Opciones de respuesta</legend>{options.map((option, optionIndex) => { const isSelected = selected.includes(option.id); const isCorrect = question.correctOptionIds.includes(option.id); const showState = feedbackVisible && !mock; return <label className={`answer-option ${isSelected ? 'selected' : ''} ${showState && isCorrect ? 'correct' : ''} ${showState && isSelected && !isCorrect ? 'incorrect' : ''}`} key={option.id}><input type={question.type === 'multiple' ? 'checkbox' : 'radio'} name={question.id} checked={isSelected} onChange={() => onToggleAnswer(option.id)} disabled={showState} /><span className="option-key">{String.fromCharCode(65 + optionIndex)}</span><span className="option-copy"><InlineText text={option.text} /></span>{showState && isCorrect && <span className="option-state">✓</span>}{showState && isSelected && !isCorrect && <span className="option-state">×</span>}</label> })}</fieldset>
       <p className="quiz-shortcuts">Teclado: <kbd>1</kbd>–<kbd>{lastKey}</kbd> o <kbd>A</kbd>–<kbd>{String.fromCharCode(64 + lastKey)}</kbd> {question.type === 'multiple' ? 'marcan o desmarcan una opción' : 'eligen opción'} · <kbd>Enter</kbd> {mock ? 'guarda y continúa' : 'comprueba o pasa a la siguiente'} · <kbd>M</kbd> marca la pregunta</p>
-      {feedbackVisible && !mock && <Feedback question={question} result={result} selected={selected} onOpenGuide={onOpenGuide} />}
+      {feedbackVisible && !mock && <Feedback question={question} result={result} selected={selected} correctLetters={correctLetters} onOpenGuide={onOpenGuide} />}
     </section><aside className="quiz-aside"><div className="quiz-aside-card"><p className="eyebrow">CONTROL DE SESIÓN</p><div className="confidence-label"><span>Confianza</span><strong>{confidence}/5</strong></div><div className="confidence-scale">{([1, 2, 3, 4, 5] as Confidence[]).map((value) => <button className={confidence === value ? 'active' : ''} key={value} onClick={() => onConfidence(value)} aria-label={`Confianza ${value}`}>{value}</button>)}</div><p className="confidence-hint">Se usa para priorizar el repaso.</p></div>{/* Fuente y cuadrícula, plegables: abiertas en escritorio y cerradas en móvil. La confianza queda siempre a la vista. */}<details className="quiz-aside-details" open={!mobile}><summary>{mock ? 'Documentación y lista de preguntas' : 'Documentación de apoyo'}</summary><div className="quiz-aside-card source-mini"><p className="eyebrow">FUENTE OFICIAL</p><p>Consulta la documentación para contrastar el criterio.</p>{question.sourceRefs.map((source) => <a href={source.url} target="_blank" rel="noreferrer" key={source.url}>{source.title} <span>↗</span></a>)}</div>{mock && <div className="quiz-aside-card question-nav"><p className="eyebrow">PREGUNTAS</p><div>{session.questionIds.map((id, questionIndex) => <button className={`${questionIndex === index ? 'active' : ''} ${questionIndex < index ? 'visited' : ''}`} key={id} onClick={() => onJump(questionIndex)}>{questionIndex + 1}</button>)}</div><small>Puedes volver a cualquier pregunta.</small></div>}</details></aside></div>
     <div className="quiz-footer"><button className="button-quiet" onClick={onBack} disabled={!mock || index === 0}>← Anterior</button><div className="quiz-footer-actions">{mock && onReview && index < session.questionIds.length - 1 && <button type="button" className="button-quiet" onClick={onReview}>Entregar…</button>}{feedbackVisible && !mock ? <button className="button-primary" onClick={onNext}>{index === session.questionIds.length - 1 ? 'Ver resultado' : 'Siguiente pregunta'} <span>→</span></button> : <button className="button-primary" onClick={onSubmit} disabled={!mock && selected.length !== question.correctOptionIds.length}>{mock ? (index === session.questionIds.length - 1 ? 'Revisar y entregar' : selected.length ? 'Guardar y continuar' : 'Omitir y continuar') : 'Comprobar respuesta'} <span>→</span></button>}</div></div>
   </div>
 }
 
-function Feedback({ question, result, selected, onOpenGuide }: { question: Question; result: { score: number; correct: boolean }; selected: string[]; onOpenGuide: () => void }) {
+/** «B», «B y D», «A, B y D». */
+const joinLetters = (letters: string[]) => (letters.length > 1 ? `${letters.slice(0, -1).join(', ')} y ${letters[letters.length - 1]}` : letters[0] ?? '')
+
+/**
+ * Feedback tras comprobar: recibe el foco (tabindex -1) y su nombre accesible es el encabezado, que empieza por
+ * «Correcto» o «Incorrecto». Sin aria-live: el lector lee el bloque al recibir el foco, una sola vez.
+ */
+function Feedback({ question, result, selected, correctLetters, onOpenGuide }: { question: Question; result: { score: number; correct: boolean }; selected: string[]; correctLetters: string[]; onOpenGuide: () => void }) {
   const answerTexts = question.options.filter((option) => question.correctOptionIds.includes(option.id)).map((option) => option.text)
-  return <div className={`feedback-box ${result.correct ? 'positive' : 'negative'}`}><div className="feedback-heading"><strong>{result.correct ? 'Respuesta precisa.' : 'Revisa el matiz.'}</strong><span>{Math.round(result.score * 100)}%</span></div><p><InlineText text={question.explanationEs} /></p><div className="feedback-context"><span>Variante: <b>{question.classicOrLatest}</b></span><span>{question.versionNote}</span></div>{!result.correct && <div className="feedback-detail"><span>Tu selección: {selected.map((id) => question.options.find((option) => option.id === id)?.text).join(' / ')}</span><span>Correcta{answerTexts.length > 1 ? 's' : ''}: {answerTexts.join(' / ')}</span></div>}<GuideLink question={question} onOpenGuide={onOpenGuide} /><div className="feedback-source"><span>Consulta oficial:</span>{question.sourceRefs.map((source) => <a href={source.url} target="_blank" rel="noreferrer" key={source.url}>{source.title} ↗</a>)}</div></div>
+  const boxRef = useRef<HTMLDivElement>(null)
+  useEffect(() => { boxRef.current?.focus() }, [question.id])
+  const titleId = `feedback-title-${question.id}`
+  const title = result.correct
+    ? 'Correcto · Respuesta precisa.'
+    : `Incorrecto: ${correctLetters.length > 1 ? 'las respuestas eran' : 'la respuesta era'} ${joinLetters(correctLetters)}.`
+  return <div ref={boxRef} tabIndex={-1} aria-labelledby={titleId} className={`feedback-box ${result.correct ? 'positive' : 'negative'}`}><div className="feedback-heading"><h3 id={titleId} className="feedback-title">{title}</h3><span>{Math.round(result.score * 100)}%</span></div><p><InlineText text={question.explanationEs} /></p><div className="feedback-context"><span>Variante: <b>{question.classicOrLatest}</b></span><span>{question.versionNote}</span></div>{!result.correct && <div className="feedback-detail"><span>Tu selección: {selected.map((id) => question.options.find((option) => option.id === id)?.text).join(' / ')}</span><span>Correcta{answerTexts.length > 1 ? 's' : ''}: {answerTexts.join(' / ')}</span></div>}<GuideLink question={question} onOpenGuide={onOpenGuide} /><div className="feedback-source"><span>Consulta oficial:</span>{question.sourceRefs.map((source) => <a href={source.url} target="_blank" rel="noreferrer" key={source.url}>{source.title} ↗</a>)}</div></div>
 }

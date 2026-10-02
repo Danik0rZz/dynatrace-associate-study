@@ -1248,6 +1248,12 @@ h3 { letter-spacing: -.025em; }
 .feedback-box.negative { border-left-color: var(--danger); background: var(--feedback-surface); }
 .feedback-heading { display: flex; justify-content: space-between; color: var(--teal-dark); }
 .negative .feedback-heading { color: var(--difficulty-text-3); }
+/* El encabezado del feedback es un h3 (nombre accesible del bloque) con el aspecto del texto en negrita de antes. */
+.feedback-title { margin: 0; font-size: 1em; font-weight: 700; letter-spacing: normal; color: inherit; }
+/* El bloque recibe el foco al comprobar: anillo siempre visible, también si se comprobó con el ratón. */
+.feedback-box:focus { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+/* El enunciado recibe el foco al pasar de pregunta: sin anillo con el ratón, con anillo con el teclado (regla global). */
+.question-prompt:focus:not(:focus-visible), .result-title:focus:not(:focus-visible) { outline: none; }
 .feedback-box p { font-size: 12px; line-height: 1.55; margin: 10px 0; }
 .feedback-detail { display: flex; gap: 16px; flex-wrap: wrap; color: var(--ink-soft); font-size: 11px; }
 .feedback-context { display: flex; flex-wrap: wrap; gap: 7px 15px; color: var(--muted); font-size: 10px; line-height: 1.45; }
