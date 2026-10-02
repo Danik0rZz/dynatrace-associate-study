@@ -16,13 +16,14 @@ Cada bloque tiene una carpeta `src/data/blocks/<bloque>/` con **todo** su conten
 
 | Qué | Dónde | Notas |
 |---|---|---|
-| Bloques (título, objetivos, fuentes) | `src/data/modules.ts` | Un bloque nuevo se añade aquí y en `src/data/blocks/index.ts`. |
+| Bloques (título, objetivos, fuentes) | `src/data/modules.ts` | Un bloque nuevo se añade aquí, en `src/data/blocks/index.ts` y en `src/data/blocks/questions.ts`. La guía la recoge sola el cargador (`import.meta.glob`). |
 | Guía de estudio | `src/data/blocks/<bloque>/guide.ts` | Apartados con `id` estable (las preguntas y los visuales lo usan), título **sin número** (se numera solo por el orden), ≥ 2 párrafos y `sourceRefs` oficiales. |
 | Ficha de hechos de precisión | `src/data/blocks/<bloque>/precision.ts` | Una fila por `topic`, con fuente oficial. |
 | Preguntas | `src/data/blocks/<bloque>/questions.ts` | Cada pregunta lleva `guide: { section, evidence }`: el apartado que la respalda (o `'precision-facts'`) y un fragmento **literal** (≥ 25 caracteres) que contiene el dato decisivo. Ids nuevos `R-<COD>-NN` continuando la numeración del bloque; `lastVerified` = fecha de verificación. |
 | Animaciones e ilustraciones | `src/components/visuals/<bloque>.tsx` | Clave = id del apartado. Tras añadir o quitar uno, actualiza `src/components/visuals/index-ids.ts` (un test lo comprueba). |
 | Valoración de cada apartado | `docs/plan-apartados.csv` | Manual (persona o IA). Ver abajo. |
 | Inventario | `docs/inventario*.csv`, `docs/inventario.md` | **Generados**: nunca a mano. |
+| Índice ligero (guía y preguntas) | `src/data/generated/*.json` | **Generado** con `npm run inventario`: nunca a mano. Un test falla si está desfasado. |
 | Historial de la revisión de 2026 | `docs/historial-revision-2026.md` | Motivos de las correcciones previas a la unificación; desde entonces, el historial es git. |
 
 Ids de bloque (carpetas): welcome, instructions, platform, observability, notebooks, business-dem, data-analysis, dql, security, automation, ingestion, other.
@@ -93,5 +94,6 @@ Antes de subir nada, ejecuta `npm run check` en local.
 - `src/App.tsx`: estructura y navegación. `src/app/`: tipos, etiquetas, sesión de preguntas (`useStudySession`), almacenamiento local y copia de seguridad.
 - `src/views/`: una pantalla por fichero. `src/components/`: piezas reutilizables (barra lateral, apartado de la guía, panel de la guía, mapa, visuales).
 - `src/lib/`: lógica sin interfaz (selección aleatoria, progreso, enlaces pregunta ↔ guía, inventario, backup).
+- La guía y la ficha de precisión se cargan por bloque (`src/data/guide-loader.ts`). La app no debe importar `data/guide` ni `data/blocks/index` de forma síncrona (lo comprueba un test).
 - El mapa (React Flow) y los visuales de cada bloque se descargan solo al abrirlos.
 - Accesibilidad: foco visible, enlace «Saltar al contenido», panel de la guía con foco atrapado y Esc. Mantén el contraste de texto ≥ 4,5:1 (usa los colores de `:root` en `styles.css`).
