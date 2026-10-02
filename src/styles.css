@@ -784,6 +784,16 @@ h3 { letter-spacing: -.025em; }
 .question-nav button { width: 27px; height: 27px; border: 1px solid var(--line); background: #fff; color: var(--muted); font-size: 10px; }
 .question-nav button.active { color: #fff; background: var(--teal); border-color: var(--teal); }
 .question-nav button.visited { color: var(--teal-dark); border-color: #9ad5cc; }
+.question-nav button.flagged { color: var(--coral); border-color: var(--coral); }
+.mock-review-grid button { width: auto; min-width: 34px; height: 30px; padding: 0 6px; font-size: 11px; }
+.mock-review-grid button.pending { color: var(--ink); background: var(--paper-soft); }
+.mock-review-counts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0; }
+.mock-review-counts div { padding: 16px 18px; border: 1px solid var(--line); background: var(--paper); }
+.mock-review-counts dt { color: var(--muted); font-size: 12px; }
+.mock-review-counts dd { margin: 4px 0 0; color: var(--ink); font-size: 28px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.resume-mock { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px 16px; margin: 0 0 16px; padding: 14px 18px; border-left: 4px solid var(--teal); background: var(--paper-soft); color: var(--ink); font-size: 13px; line-height: 1.5; }
+.resume-mock p { margin: 0; }
+.resume-mock-actions { display: flex; gap: 14px; align-items: center; }
 .question-nav small { display: block; color: var(--muted); font-size: 10px; line-height: 1.4; margin-top: 13px; }
 .quiz-footer { display: flex; justify-content: space-between; align-items: center; }
 .feedback-box { margin-top: 26px; padding: 20px; border-left: 3px solid var(--teal); background: #eef8f5; }
