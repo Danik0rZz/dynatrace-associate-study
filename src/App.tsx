@@ -3,6 +3,7 @@ import { DialogHost } from './components/Dialog'
 import { confirmDialog, isDialogOpen, subscribeDialogs } from './lib/dialogs'
 import { navItems } from './app/labels'
 import { HOME, useHashRouter, type Route } from './app/router'
+import { useMediaQuery } from './app/useMediaQuery'
 import { useStoredState } from './app/storage'
 import type { View } from './app/types'
 import { useStudySession } from './app/useStudySession'
@@ -185,7 +186,9 @@ function App() {
   const togglePractice = (id: string) => setPracticeDone((items) => items.includes(id) ? items.filter((item) => item !== id) : [...items, id])
   const inQuiz = view === 'quiz' || view === 'mock'
   // Versiones anteriores guardaban '1'/'0' en vez de true/false.
-  const collapsed = Boolean(sidebarCollapsed)
+  // En móvil (≤ 780 px) la barra no se colapsa: un estado guardado como colapsado se ignora.
+  const mobile = useMediaQuery('(max-width: 780px)')
+  const collapsed = Boolean(sidebarCollapsed) && !mobile
   const dialogOpen = useSyncExternalStore(subscribeDialogs, isDialogOpen, () => false)
   const breadcrumb = view === 'home' ? 'Study Lab' : navItems.find((item) => item.id === view)?.label ?? selectedModule.title
 

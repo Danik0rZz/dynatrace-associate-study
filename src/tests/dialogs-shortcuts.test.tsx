@@ -245,9 +245,11 @@ describe('atajos de teclado en el quiz', () => {
     const { readFileSync } = (await import(/* @vite-ignore */ fsModule)) as { readFileSync: (path: string, encoding: 'utf8') => string }
     const css = readFileSync('src/styles.css', 'utf8')
     const root = Object.fromEntries([...css.match(/:root\s*\{([^}]*)\}/)![1].matchAll(/--([a-z-]+):\s*(#[0-9a-f]{6})/gi)].map((match) => [match[1], match[2]]))
+    // Primera regla del selector que declara la propiedad (puede haber otras, p. ej. en media queries, sin ella).
     const varOf = (selector: string, property: string) => {
-      const body = css.match(new RegExp(`${selector.replace(/[.*]/g, '\\$&')}\\s*\\{([^}]*)\\}`))![1]
-      return root[body.match(new RegExp(`(?:^|;|\\s)${property}:\\s*var\\(--([a-z-]+)\\)`))![1]]
+      const bodies = [...css.matchAll(new RegExp(`${selector.replace(/[.*]/g, '\\$&')}\\s*\\{([^}]*)\\}`, 'g'))].map((match) => match[1])
+      const declaration = new RegExp(`(?:^|;|\\s)${property}:\\s*var\\(--([a-z-]+)\\)`)
+      return root[bodies.map((body) => body.match(declaration)).find(Boolean)![1]]
     }
     const luminance = (hex: string) => {
       const [r, g, b] = [1, 3, 5].map((start) => parseInt(hex.slice(start, start + 2), 16) / 255).map((c) => c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)
