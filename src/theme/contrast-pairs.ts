@@ -3,10 +3,12 @@
  * Un fondo puede ser una capa translúcida sobre otro: «--nav-surface sobre --sidebar-bg» se escribe ['--nav-surface', '--sidebar-bg'].
  */
 export type Background = string | [overlay: string, base: string]
-export type ContrastPair = { what: string; fg: string; bg: Background; min: number }
+/** `scope: 'sv'`: el par se mide dentro de la tarjeta de ilustración (.sv), con sus tokens fijos en claro. */
+export type ContrastPair = { what: string; fg: string; bg: Background; min: number; scope?: 'sv' }
 
 const text = (what: string, fg: string, bg: Background): ContrastPair => ({ what, fg, bg, min: 4.5 })
 const focus = (what: string, fg: string, bg: Background): ContrastPair => ({ what, fg, bg, min: 3 })
+const sv = (pair: ContrastPair): ContrastPair => ({ ...pair, scope: 'sv' })
 
 export const CONTRAST_PAIRS: ContrastPair[] = [
   // Texto y texto secundario sobre sus fondos.
@@ -62,8 +64,28 @@ export const CONTRAST_PAIRS: ContrastPair[] = [
   // Ficha de precisión (panel oscuro).
   text('ficha de precisión', '--precision-text', '--precision-surface'),
   text('ficha de precisión (celdas)', '--precision-text-3', '--precision-surface'),
-  // Elementos gráficos (≥ 3:1).
+  // Mapa: etiquetas de las aristas (sobre su píldora), texto de la leyenda y del lienzo.
+  text('etiqueta de arista / píldora', '--react-graphic', '--paper'),
+  text('leyenda del mapa', '--ink-soft', '--canvas-surface'),
+  text('ayuda del lienzo', '--muted', '--canvas-surface'),
+  // Elementos gráficos sin texto (≥ 3:1): contorno de los puntos de estado de la leyenda.
+  focus('punto «Dominado» de la leyenda', '--legend-mastered-line', '--canvas-surface'),
+  focus('punto «En progreso» de la leyenda', '--legend-progress-line', '--canvas-surface'),
+  focus('punto «Pendiente» de la leyenda', '--legend-pending-line', '--canvas-surface'),
   focus('línea del gráfico de estadísticas', '--teal-dark', '--paper'),
+  // Isla clara de las ilustraciones (.sv): cabecera, pie y pasos, iguales en los dos temas.
+  sv(text('ilustración: título de la cabecera', '--sv-ink', '--sv-header-bg')),
+  sv(text('ilustración: etiqueta «Animación»', '--sv-teal-dark', '--sv-kind-bg')),
+  sv(text('ilustración: etiqueta «Ilustración»', '--sv-static-kind', '--sv-static-kind-bg')),
+  sv(text('ilustración: botones de control', '--sv-teal-dark', '--sv-paper')),
+  sv(text('ilustración: pie', '--sv-ink-soft', '--sv-paper')),
+  sv(text('ilustración: paso', '--sv-ink-soft', '--sv-paper')),
+  sv(text('ilustración: número de paso', '--sv-ink-soft', '--sv-step-num-bg')),
+  sv(text('ilustración: paso hecho', '--sv-ink', '--sv-paper')),
+  sv(text('ilustración: número de paso hecho', '--sv-teal-dark', '--sv-step-done-bg')),
+  sv(text('ilustración: paso activo', '--sv-on-dark', '--sv-step-active-bg')),
+  sv(text('ilustración: número de paso activo', '--sv-on-dark', '--sv-teal')),
+  sv(focus('ilustración: foco', '--focus-ring', '--sv-paper')),
   // Foco visible.
   focus('foco / fondo', '--focus-ring', '--bg'),
   focus('foco / tarjeta', '--focus-ring', '--paper'),

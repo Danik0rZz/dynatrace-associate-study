@@ -32,7 +32,10 @@ export type StudyPhase = {
   order: number
   description: string
   moduleIds: string[]
+  /** Color de la fase y sus variantes translúcidas (tokens CSS con valor claro y oscuro). */
   color: string
+  tint: string
+  line: string
 }
 
 export const studyPhases: StudyPhase[] = [
@@ -43,7 +46,9 @@ export const studyPhases: StudyPhase[] = [
     shortName: 'Plataforma & Agentes',
     description: 'Cimientos del tenant SaaS, licenciamiento DPS, OneAgent, ActiveGate y canales de OpenPipeline.',
     moduleIds: ['platform', 'observability', 'ingestion'],
-    color: '#087d72',
+    color: 'var(--map-phase-1)',
+    tint: 'var(--map-phase-1-tint)',
+    line: 'var(--map-phase-1-line)',
   },
   {
     id: 'storage-dql',
@@ -52,7 +57,9 @@ export const studyPhases: StudyPhase[] = [
     shortName: 'Grail & DQL',
     description: 'Particionado de buckets, retención, series temporales y lenguaje de consulta Dynatrace (DQL).',
     moduleIds: ['data-analysis', 'dql'],
-    color: '#11a899',
+    color: 'var(--map-phase-2)',
+    tint: 'var(--map-phase-2-tint)',
+    line: 'var(--map-phase-2-line)',
   },
   {
     id: 'analytics-dem',
@@ -61,7 +68,9 @@ export const studyPhases: StudyPhase[] = [
     shortName: 'Dashboards & DEM',
     description: 'Notebooks exploratorios, Dashboards interactivos, Real User Monitoring (RUM) y Synthetic.',
     moduleIds: ['notebooks', 'business-dem'],
-    color: '#1c7a6f',
+    color: 'var(--map-phase-3)',
+    tint: 'var(--map-phase-3-tint)',
+    line: 'var(--map-phase-3-line)',
   },
   {
     id: 'security-action',
@@ -70,7 +79,9 @@ export const studyPhases: StudyPhase[] = [
     shortName: 'Seguridad & Workflows',
     description: 'Vulnerabilidades en runtime (DSS), flujos automáticos de AutomationEngine y topología Smartscape.',
     moduleIds: ['security', 'automation', 'other'],
-    color: '#1f4854',
+    color: 'var(--map-phase-4)',
+    tint: 'var(--map-phase-4-tint)',
+    line: 'var(--map-phase-4-line)',
   },
 ]
 
@@ -157,8 +168,8 @@ function ModuleCustomNode({ data }: NodeProps<Node<ModuleNodeData>>) {
                 background: isMastered
                   ? 'var(--teal)'
                   : completion > 0
-                  ? 'linear-gradient(90deg, #11a899, #31b8aa)'
-                  : '#cbd5e1',
+                  ? 'linear-gradient(90deg, var(--map-progress-start), var(--map-progress-end))'
+                  : 'var(--map-progress-empty)',
               }}
             />
           </div>
@@ -188,6 +199,8 @@ type PhaseHeaderData = {
   title: string
   subtitle: string
   color: string
+  tint: string
+  line: string
   attempted: number
   totalQuestions: number
   completionPct: number
@@ -202,6 +215,8 @@ function PhaseHeaderCustomNode({ data }: NodeProps<Node<PhaseHeaderData>>) {
     title,
     subtitle,
     color,
+    tint,
+    line,
     attempted,
     totalQuestions,
     completionPct,
@@ -225,7 +240,7 @@ function PhaseHeaderCustomNode({ data }: NodeProps<Node<PhaseHeaderData>>) {
         <div className="phase-header-node-badge-row">
           <span
             className="phase-header-node-pill"
-            style={{ color: color, borderColor: `${color}40`, background: `${color}14` }}
+            style={{ color, borderColor: line, background: tint }}
           >
             FASE {order}
           </span>
@@ -253,9 +268,11 @@ export interface MapViewProps {
   onQuickQuiz?: (id: string) => void
   onFullQuiz?: (id: string) => void
   onPractice?: (id: string) => void
+  /** Tema ya resuelto (con «Sistema», según prefers-color-scheme). */
+  colorMode?: 'light' | 'dark'
 }
 
-export function MapView({ progress, onOpenModule, onQuickQuiz, onFullQuiz, onPractice }: MapViewProps) {
+export function MapView({ progress, colorMode = 'light', onOpenModule, onQuickQuiz, onFullQuiz, onPractice }: MapViewProps) {
   const [viewMode, setViewMode] = useState<'graph' | 'roadmap'>('graph')
   const [selectedModuleId, setSelectedModuleId] = useState<string>('platform')
   const [activePhaseFilter, setActivePhaseFilter] = useState<string>('all')
@@ -348,6 +365,8 @@ export function MapView({ progress, onOpenModule, onQuickQuiz, onFullQuiz, onPra
           title: phase.shortName,
           subtitle: phase.name.replace(/^Fase \d+:\s*/, ''),
           color: phase.color,
+          tint: phase.tint,
+          line: phase.line,
           attempted: phaseAttempted,
           totalQuestions: phaseQuestionIds.length,
           completionPct,
@@ -417,7 +436,7 @@ export function MapView({ progress, onOpenModule, onQuickQuiz, onFullQuiz, onPra
         type: 'smoothstep',
         animated: true,
         label: 'OneAgent Core',
-        style: { stroke: '#087d72', strokeWidth: 2 },
+        style: { stroke: 'var(--map-edge-foundation)', strokeWidth: 2 },
       },
       {
         id: 'e-obs-ing',
@@ -430,7 +449,7 @@ export function MapView({ progress, onOpenModule, onQuickQuiz, onFullQuiz, onPra
         type: 'smoothstep',
         animated: true,
         label: 'OpenPipeline',
-        style: { stroke: '#087d72', strokeWidth: 2 },
+        style: { stroke: 'var(--map-edge-foundation)', strokeWidth: 2 },
       },
 
       // --- FASE 1 -> FASE 2 (Ingesta a Almacenamiento & Analítica Grail) ---
@@ -445,7 +464,7 @@ export function MapView({ progress, onOpenModule, onQuickQuiz, onFullQuiz, onPra
         type: 'smoothstep',
         animated: true,
         label: 'Métricas & Logs',
-        style: { stroke: '#11a899', strokeWidth: 2 },
+        style: { stroke: 'var(--map-edge-grail)', strokeWidth: 2 },
       },
       {
         id: 'e-ing-dql',
@@ -458,7 +477,7 @@ export function MapView({ progress, onOpenModule, onQuickQuiz, onFullQuiz, onPra
         type: 'smoothstep',
         animated: true,
         label: 'Grail Lakehouse',
-        style: { stroke: '#11a899', strokeWidth: 2 },
+        style: { stroke: 'var(--map-edge-grail)', strokeWidth: 2 },
       },
 
       // --- FASE 2 INTERNA (Columna 2: Vertical descendente) ---
@@ -472,7 +491,7 @@ export function MapView({ progress, onOpenModule, onQuickQuiz, onFullQuiz, onPra
         targetHandle: 'top',
         type: 'smoothstep',
         label: 'DQL Engine',
-        style: { stroke: '#11a899', strokeWidth: 1.5 },
+        style: { stroke: 'var(--map-edge-grail)', strokeWidth: 1.5 },
       },
 
       // --- FASE 2 -> FASE 3 (Grail a Visualización & DEM: Líneas Horizontales puras) ---
@@ -487,7 +506,7 @@ export function MapView({ progress, onOpenModule, onQuickQuiz, onFullQuiz, onPra
         type: 'smoothstep',
         animated: true,
         label: 'Notebooks & Paneles',
-        style: { stroke: '#2a9d8f', strokeWidth: 2 },
+        style: { stroke: 'var(--map-edge-dem)', strokeWidth: 2 },
       },
       {
         id: 'e-dql-biz',
@@ -500,7 +519,7 @@ export function MapView({ progress, onOpenModule, onQuickQuiz, onFullQuiz, onPra
         type: 'smoothstep',
         animated: true,
         label: 'BizEvents & RUM',
-        style: { stroke: '#2a9d8f', strokeWidth: 2 },
+        style: { stroke: 'var(--map-edge-dem)', strokeWidth: 2 },
       },
 
       // --- FASE 3 INTERNA (Columna 3: Vertical descendente) ---
@@ -514,7 +533,7 @@ export function MapView({ progress, onOpenModule, onQuickQuiz, onFullQuiz, onPra
         targetHandle: 'top',
         type: 'smoothstep',
         label: 'DEM Dashboards',
-        style: { stroke: '#2a9d8f', strokeWidth: 1.5 },
+        style: { stroke: 'var(--map-edge-dem)', strokeWidth: 1.5 },
       },
 
       // --- FASE 3 -> FASE 4 (Visualización a Seguridad & Automatización: Líneas Horizontales puras) ---
@@ -529,7 +548,7 @@ export function MapView({ progress, onOpenModule, onQuickQuiz, onFullQuiz, onPra
         type: 'smoothstep',
         animated: true,
         label: 'AppSec Dashboards',
-        style: { stroke: '#1f4854', strokeWidth: 2 },
+        style: { stroke: 'var(--map-edge-security)', strokeWidth: 2 },
       },
       {
         id: 'e-biz-auto',
@@ -542,7 +561,7 @@ export function MapView({ progress, onOpenModule, onQuickQuiz, onFullQuiz, onPra
         type: 'smoothstep',
         animated: true,
         label: 'SLO & Event Triggers',
-        style: { stroke: '#1f4854', strokeWidth: 2 },
+        style: { stroke: 'var(--map-edge-security)', strokeWidth: 2 },
       },
 
       // --- FASE 4 INTERNA (Columna 4: Vertical descendente) ---
@@ -556,7 +575,7 @@ export function MapView({ progress, onOpenModule, onQuickQuiz, onFullQuiz, onPra
         targetHandle: 'top',
         type: 'smoothstep',
         label: 'Remediación',
-        style: { stroke: '#df735a', strokeWidth: 1.5, strokeDasharray: '4 4' },
+        style: { stroke: 'var(--map-edge-remediation)', strokeWidth: 1.5, strokeDasharray: '4 4' },
       },
       {
         id: 'e-auto-other',
@@ -569,7 +588,7 @@ export function MapView({ progress, onOpenModule, onQuickQuiz, onFullQuiz, onPra
         type: 'smoothstep',
         animated: true,
         label: 'Davis AI & Smartscape',
-        style: { stroke: '#1f4854', strokeWidth: 2 },
+        style: { stroke: 'var(--map-edge-security)', strokeWidth: 2 },
       },
 
       // --- BUS INFERIOR (Fila 3: Ingesta a Smartscape & Hub) ---
@@ -583,7 +602,7 @@ export function MapView({ progress, onOpenModule, onQuickQuiz, onFullQuiz, onPra
         targetHandle: 'left',
         type: 'smoothstep',
         label: 'Hub & Extensiones',
-        style: { stroke: '#70908f', strokeWidth: 1.5, strokeDasharray: '5 5' },
+        style: { stroke: 'var(--map-edge-hub)', strokeWidth: 1.5, strokeDasharray: '5 5' },
       },
     ]
 
@@ -605,13 +624,13 @@ export function MapView({ progress, onOpenModule, onQuickQuiz, onFullQuiz, onPra
         labelStyle: {
           fontSize: 10,
           fontWeight: 700,
-          fill: '#1e3a44',
+          fill: 'var(--react-graphic)',
           opacity: dimmed ? 0.2 : 1,
         },
         labelBgStyle: {
-          fill: '#ffffff',
+          fill: 'var(--paper)',
           fillOpacity: 0.96,
-          stroke: '#cbd5e1',
+          stroke: 'var(--react-graphic-2)',
           strokeWidth: 1,
           rx: 4,
           ry: 4,
@@ -744,6 +763,7 @@ export function MapView({ progress, onOpenModule, onQuickQuiz, onFullQuiz, onPra
             <div className="map-canvas-scroll" tabIndex={0} role="region" aria-label="Lienzo del mapa de estudio" aria-describedby="map-scroll-hint">
             <div className="flow-canvas-wrapper">
               <ReactFlow
+                colorMode={colorMode}
                 nodes={nodes}
                 edges={edges}
                 nodeTypes={nodeTypes}
@@ -763,7 +783,7 @@ export function MapView({ progress, onOpenModule, onQuickQuiz, onFullQuiz, onPra
                 maxZoom={1.5}
               >
                 <CanvasViewUpdater isInspectorOpen={isInspectorOpen} />
-                <Background color="#cbd5e1" gap={28} size={1.2} />
+                <Background color="var(--map-grid)" gap={28} size={1.2} />
                 <Controls className="custom-controls" showInteractive={false} />
               </ReactFlow>
             </div>

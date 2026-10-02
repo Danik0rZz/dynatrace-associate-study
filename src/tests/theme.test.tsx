@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import App from '../App'
 import { THEME_KEY, themeAttribute } from '../app/theme'
@@ -20,8 +20,12 @@ const blockAfter = (css: string, opener: string) => {
   return css.slice(start + opener.length, css.indexOf('}', start))
 }
 
-/** Pares que ya estaban por debajo del umbral en claro antes del tema oscuro (arreglarlos cambiaría el aspecto en claro). */
-const KNOWN_LIGHT_ISSUES = new Set(['estado pendiente'])
+/** Tokens del primer bloque `.sv { … }` de visuals.css, con las referencias var(--sv-*) resueltas. */
+const svTokens = (visualsCss: string): Record<string, string> => {
+  const raw = tokensIn(blockAfter(visualsCss, '.sv {'))
+  const resolve = (value: string): string => value.replace(/var\((--[a-z0-9-]+)\)/g, (_, name: string) => resolve(raw[name] ?? ''))
+  return Object.fromEntries(Object.entries(raw).map(([name, value]) => [name, resolve(value)]))
+}
 
 describe('tema oscuro: tokens', () => {
   it('los dos bloques oscuros declaran exactamente los mismos tokens y valores, que salen de dark-tokens.ts', async () => {
@@ -49,17 +53,35 @@ describe('tema oscuro: contraste', () => {
     const css = await readProjectFile('src/styles.css')
     const light = tokensIn(blockAfter(css, ':root {'))
     const dark = { ...light, ...tokensIn(blockAfter(css, ':root[data-theme="dark"] {')) }
-    return { light, dark }
+    const sv = svTokens(await readProjectFile('src/components/visuals/visuals.css'))
+    return { light, dark, sv }
   }
 
-  it.each(['light', 'dark'] as const)('tema %s: texto ≥ 4,5:1 y foco ≥ 3:1 en todos los pares usados', async (name) => {
-    const theme = (await themes())[name]
+  it.each(['light', 'dark'] as const)('tema %s: texto ≥ 4,5:1 y foco ≥ 3:1 en todos los pares usados, sin excepciones', async (name) => {
+    const all = await themes()
+    // Dentro de la tarjeta .sv, sus tokens propios se imponen a los del tema (que es lo que hace la cascada).
+    const themeFor = (scope?: 'sv') => (scope === 'sv' ? { ...all[name], ...all.sv } : all[name])
     const failures = CONTRAST_PAIRS
-      .filter((pair) => !(name === 'light' && KNOWN_LIGHT_ISSUES.has(pair.what)))
-      .map((pair) => ({ ...pair, ratio: contrastOf(theme, pair.fg, pair.bg) }))
+      .map((pair) => ({ ...pair, ratio: contrastOf(themeFor(pair.scope), pair.fg, pair.bg) }))
       .filter((pair) => pair.ratio < pair.min)
       .map((pair) => `${pair.what}: ${pair.fg} sobre ${JSON.stringify(pair.bg)} = ${pair.ratio.toFixed(2)} < ${pair.min}`)
     expect(failures).toEqual([])
+  })
+
+  it('la tarjeta .sv solo usa tokens propios o generales redefinidos en claro dentro de ella', async () => {
+    const visuals = await readProjectFile('src/components/visuals/visuals.css')
+    const css = await readProjectFile('src/styles.css')
+    const light = tokensIn(blockAfter(css, ':root {'))
+    const sv = svTokens(visuals)
+    expect(blockAfter(visuals, '.sv {')).toContain('color-scheme: light;')
+    // Cada token general redefinido en .sv vale lo mismo que en claro.
+    for (const [name, value] of Object.entries(sv)) if (!name.startsWith('--sv-')) expect(value, name).toBe(light[name])
+    // Todo var() de las reglas de la tarjeta está definido dentro de .sv (ninguno llega del tema oscuro).
+    const svRules = [...visuals.matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter((rule) => /(^|[\s,])\.sv[\s.{:-]/.test(` ${rule[1].trim()} `))
+    const used = new Set(svRules.flatMap((rule) => [...rule[2].matchAll(/var\((--[a-z0-9-]+)\)/g)].map((match) => match[1])))
+    for (const name of used) expect(sv[name], name).toBeDefined()
+    // Las reglas globales que alcanzan la tarjeta (foco visible, color de texto) usan tokens que .sv redefine.
+    for (const name of ['--focus-ring', '--ink', '--ink-soft', '--line', '--teal', '--teal-dark', '--paper']) expect(sv[name], name).toBeDefined()
   })
 
   it('el test detecta un par por debajo del umbral', async () => {
@@ -115,6 +137,56 @@ describe('preferencia de tema', () => {
     render(<App />)
     expect((picker().getByRole('radio', { name: 'Oscuro' }) as HTMLInputElement).checked).toBe(true)
     expect(document.documentElement.getAttribute('data-theme')).toBe('dark')
+  })
+})
+
+describe('mapa: colorMode de React Flow', () => {
+  const setSystemDark = (dark: boolean) => {
+    window.matchMedia = ((query: string) => ({
+      matches: dark && query === '(prefers-color-scheme: dark)',
+      media: query,
+      onchange: null,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+      addListener: () => undefined,
+      removeListener: () => undefined,
+      dispatchEvent: () => false,
+    })) as typeof window.matchMedia
+  }
+  beforeEach(() => {
+    window.localStorage.clear()
+    window.scrollTo = () => undefined
+    window.history.replaceState(null, '', '#/mapa')
+    // React Flow mide su contenedor con ResizeObserver, que jsdom no trae.
+    globalThis.ResizeObserver = class { observe() {} unobserve() {} disconnect() {} } as unknown as typeof ResizeObserver
+  })
+  afterEach(() => {
+    cleanup()
+    delete (window as Partial<Window>).matchMedia
+    delete (globalThis as Partial<typeof globalThis>).ResizeObserver
+    document.documentElement.removeAttribute('data-theme')
+  })
+
+  it('con «Sistema» sigue al sistema: oscuro → colorMode dark', async () => {
+    setSystemDark(true)
+    render(<App />)
+    await waitFor(() => expect(document.querySelector('.react-flow')).toBeTruthy())
+    expect(document.querySelector('.react-flow')!.classList.contains('dark')).toBe(true)
+  })
+
+  it('con «Sistema» y el sistema en claro → light', async () => {
+    setSystemDark(false)
+    render(<App />)
+    await waitFor(() => expect(document.querySelector('.react-flow')).toBeTruthy())
+    expect(document.querySelector('.react-flow')!.classList.contains('dark')).toBe(false)
+  })
+
+  it('una preferencia explícita manda sobre el sistema', async () => {
+    setSystemDark(true)
+    window.localStorage.setItem(THEME_KEY, '"light"')
+    render(<App />)
+    await waitFor(() => expect(document.querySelector('.react-flow')).toBeTruthy())
+    expect(document.querySelector('.react-flow')!.classList.contains('dark')).toBe(false)
   })
 })
 
