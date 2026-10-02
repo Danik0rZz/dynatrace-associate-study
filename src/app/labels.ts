@@ -19,6 +19,8 @@ export const navItems: { id: View; label: string; icon: string }[] = [
   { id: 'mock', label: 'Simulacro', icon: '◷' },
   { id: 'errors', label: 'Errores', icon: '!' },
   { id: 'glossary', label: 'Glosario', icon: 'Aa' },
+  { id: 'search', label: 'Buscar', icon: '⌕' },
+  { id: 'stats', label: 'Estadísticas', icon: '▤' },
 ]
 
 export const sourceKindLabel = (kind: string) => (kind === 'official-training' ? 'Training oficial' : kind === 'support' ? 'Support oficial' : 'Documentación oficial')

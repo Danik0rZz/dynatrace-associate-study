@@ -20,12 +20,14 @@ import type { View } from './types'
  * | `#/practicas[/<bloque>]`     | prácticas (todas o de un bloque)   |
  * | `#/glosario`                 | glosario                           |
  * | `#/mapa`                     | mapa de estudio                    |
+ * | `#/buscar`                   | búsqueda en la guía y el glosario  |
+ * | `#/estadisticas`             | historial de simulacros            |
  */
 export type Route = { view: View; moduleId?: string; sectionId?: string }
 
 export const HOME: Route = { view: 'home' }
 
-const STATIC: Partial<Record<View, string>> = { quiz: 'quiz', mock: 'simulacro', review: 'repaso', errors: 'errores', practice: 'practicas', glossary: 'glosario', map: 'mapa' }
+const STATIC: Partial<Record<View, string>> = { quiz: 'quiz', mock: 'simulacro', review: 'repaso', errors: 'errores', practice: 'practicas', glossary: 'glosario', map: 'mapa', search: 'buscar', stats: 'estadisticas' }
 const BY_SEGMENT = Object.fromEntries(Object.entries(STATIC).map(([view, segment]) => [segment, view as View]))
 
 const isModule = (id: string | undefined): id is string => Boolean(id) && modulesWithQuestions.some((module) => module.id === id)

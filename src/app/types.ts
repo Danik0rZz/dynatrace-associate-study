@@ -1,5 +1,5 @@
 /** Pantallas de la app. */
-export type View = 'home' | 'map' | 'module' | 'quiz' | 'review' | 'practice' | 'mock' | 'errors' | 'glossary'
+export type View = 'home' | 'map' | 'module' | 'quiz' | 'review' | 'practice' | 'mock' | 'errors' | 'glossary' | 'search' | 'stats'
 
 /** Tipos de sesión de preguntas. */
 export type QuizMode = 'quick' | 'full' | 'review' | 'mock' | 'section'
