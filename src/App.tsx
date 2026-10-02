@@ -52,7 +52,7 @@ function App() {
   const attemptedQuestionCount = allQuestions.filter((question) => (progress.attempts[question.id] ?? []).length > 0).length
   const overallScore = allQuestions.reduce((sum, question) => sum + (latestAttempt(progress, question.id)?.score ?? 0), 0)
   const continueTarget = continueModule(modulesWithQuestions, progress, typeof lastModuleId === 'string' ? lastModuleId : null)
-  const overallPercentage =Math.round((attemptedQuestionCount / allQuestions.length) * 100)
+  const overallPercentage = Math.round((attemptedQuestionCount / allQuestions.length) * 100)
 
   /** Salir de un simulacro en curso pide confirmación; si se acepta, queda guardado para reanudarlo. */
   const confirmLeave = () => !study.mockInProgress || window.confirm('Tienes un simulacro en curso. Si sales, quedará guardado para reanudarlo, pero el tiempo seguirá corriendo. ¿Quieres salir?')
