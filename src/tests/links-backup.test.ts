@@ -21,7 +21,7 @@ describe('enlace pregunta ↔ guía', () => {
       const ref = guideRefFor(question)
       expect(ref, question.id).toBeDefined()
       if (ref!.sectionId === PRECISION_SECTION) expect(precisionFacts[question.moduleId], question.id).toBeDefined()
-      else expect(sectionFor(question.moduleId, ref!.sectionId), `${question.id} → ${ref!.sectionId}`).toBeDefined()
+      else expect(sectionFor(deepStudyContent[question.moduleId], ref!.sectionId), `${question.id} → ${ref!.sectionId}`).toBeDefined()
       expect(ref!.title.length).toBeGreaterThan(0)
     }
   })
@@ -38,7 +38,7 @@ describe('enlace pregunta ↔ guía', () => {
   it('las preguntas de precisión muestran la fila de la ficha que contiene la evidencia', () => {
     const precisionQuestions = allQuestions.filter((question) => guideRefFor(question)?.sectionId === PRECISION_SECTION)
     for (const question of precisionQuestions) {
-      const rows = precisionRowsFor(question.moduleId, guideRefFor(question)!.evidence)
+      const rows = precisionRowsFor(precisionFacts[question.moduleId], guideRefFor(question)!.evidence)
       expect(rows.length, question.id).toBeLessThan(precisionFacts[question.moduleId].rows.length)
     }
   })

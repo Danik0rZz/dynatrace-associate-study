@@ -35,11 +35,11 @@ describe('cuota de almacenamiento llena', () => {
     expect(storageErrorSnapshot()).toBe(true)
   })
 
-  it('la app sigue funcionando en memoria y muestra un aviso no bloqueante', () => {
+  it('la app sigue funcionando en memoria y muestra un aviso no bloqueante', async () => {
     render(<App />)
     fillQuota()
     fireEvent.click(screen.getAllByRole('button', { name: /Notebooks & Dashboards/ })[0])
-    fireEvent.click(screen.getAllByText('Practicar este apartado')[0])
+    fireEvent.click((await screen.findAllByText('Practicar este apartado'))[0])
     const hint = screen.getByText(/Selecciona (exactamente \d|la respuesta)/).textContent ?? ''
     const needed = Number(hint.match(/\d/)?.[0] ?? 1)
     const options = within(screen.getByRole('group', { name: 'Opciones de respuesta' })).getAllByRole(needed > 1 ? 'checkbox' : 'radio')

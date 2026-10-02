@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from '../App'
 import { formatRoute, parseRoute } from '../app/router'
@@ -17,7 +17,11 @@ const openAt = (hash: string) => {
   window.history.replaceState(null, '', hash)
   return render(<App />)
 }
-const typeSearch = (value: string) => fireEvent.change(screen.getByLabelText('Texto a buscar'), { target: { value } })
+/** Escribe en la búsqueda y espera a que la guía (cargada por bloque) esté lista. */
+const typeSearch = async (value: string) => {
+  fireEvent.change(screen.getByLabelText('Texto a buscar'), { target: { value } })
+  await waitFor(() => expect(document.querySelector('.search-count')!.textContent).not.toBe('Cargando la guía…'))
+}
 const resultLinks = () => [...document.querySelectorAll<HTMLAnchorElement>('.search-result a')]
 
 const entry = (overrides: Partial<MockHistoryEntry> = {}): MockHistoryEntry => ({
@@ -99,11 +103,11 @@ describe('búsqueda global', () => {
     }
   })
 
-  it('en la vista: un resultado de la guía enlaza a #/<bloque>/guia/<id> y lo abre', () => {
+  it('en la vista: un resultado de la guía enlaza a #/<bloque>/guia/<id> y lo abre', async () => {
     const section = studyGuide.dql.sections[3]
     openAt('#/buscar')
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Buscar en la guía')
-    typeSearch(plainText(section.title))
+    await typeSearch(plainText(section.title))
     const link = resultLinks().find((anchor) => anchor.getAttribute('href') === `#/dql/guia/${section.id}`)!
     expect(link).toBeTruthy()
     expect(link.textContent).toContain(plainText(section.title))
@@ -112,17 +116,17 @@ describe('búsqueda global', () => {
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(modulesWithQuestions.find((module) => module.id === 'dql')!.title)
   })
 
-  it('en la vista: un término del glosario enlaza al bloque, con resaltado en <mark>', () => {
+  it('en la vista: un término del glosario enlaza al bloque, con resaltado en <mark>', async () => {
     const term = glossary.find((item) => item.term === 'Smartscape') ?? glossary[0]
     openAt('#/buscar')
-    typeSearch(term.term)
+    await typeSearch(term.term)
     const link = resultLinks().find((anchor) => anchor.textContent?.includes(`Glosario: ${term.term}`))!
     expect(link.getAttribute('href')).toBe(`#/${term.moduleId}`)
     expect(link.closest('li')!.querySelector('mark')!.textContent!.toLowerCase()).toBe(term.term.toLowerCase())
     expect(screen.getByRole('status').textContent).toMatch(/\d+ resultados?/)
   })
 
-  it('no busca en las preguntas', () => {
+  it('no busca en las preguntas', async () => {
     const corpus = index.map((doc) => normalizeForSearch(`${doc.title} ${doc.text}`)).join('\n')
     let phrase = ''
     for (const question of allQuestions) {
@@ -136,25 +140,25 @@ describe('búsqueda global', () => {
     expect(phrase).not.toBe('')
     expect(searchDocs(index, phrase)).toEqual([])
     openAt('#/buscar')
-    typeSearch(phrase)
+    await typeSearch(phrase)
     expect(resultLinks()).toHaveLength(0)
     expect(screen.getByRole('status').textContent).toBe('No hay resultados.')
   })
 
-  it('con menos de 2 caracteres no busca', () => {
+  it('con menos de 2 caracteres no busca', async () => {
     expect(searchDocs(index, 'd')).toEqual([])
     expect(searchDocs(index, ' d ')).toEqual([])
     openAt('#/buscar')
-    typeSearch('d')
+    await typeSearch('d')
     expect(resultLinks()).toHaveLength(0)
     expect(screen.getByRole('status').textContent).toBe('Escribe al menos 2 caracteres.')
   })
 
-  it('limita los resultados mostrados y lo dice en el recuento', () => {
+  it('limita los resultados mostrados y lo dice en el recuento', async () => {
     const total = searchDocs(index, 'de').length
     expect(total).toBeGreaterThan(50)
     openAt('#/buscar')
-    typeSearch('de')
+    await typeSearch('de')
     expect(resultLinks()).toHaveLength(50)
     expect(screen.getByRole('status').textContent).toBe(`${total} resultados; se muestran los 50 primeros.`)
   })

@@ -153,18 +153,27 @@ function App() {
     mainRef.current?.focus()
   }
 
-  // Tras abrir un bloque desde la guía, desplaza la vista al apartado pedido. Los visuales del bloque se
-  // descargan después y cambian la altura de la página: mientras llegan (máx. 2 s) se vuelve a colocar el
-  // apartado, salvo que el usuario ya haya empezado a desplazarse por su cuenta.
+  // Tras abrir un bloque desde la guía, desplaza la vista al apartado pedido. La guía del bloque se descarga al
+  // abrirlo y sus visuales después, y ambos cambian la altura de la página: se espera a que el apartado exista
+  // (máx. 15 s) y, desde ese momento, se vuelve a colocar durante 2 s, salvo que el usuario empiece a desplazarse.
   useEffect(() => {
     if (view !== 'module' || !pendingAnchor) return undefined
-    const align = () => document.getElementById(pendingAnchor)?.scrollIntoView({ behavior: 'auto', block: 'start' })
+    let settle = 0
+    const align = () => {
+      const target = document.getElementById(pendingAnchor)
+      if (!target) return
+      target.scrollIntoView({ behavior: 'auto', block: 'start' })
+      if (!settle) settle = window.setTimeout(stop, 2000)
+    }
     const frame = window.requestAnimationFrame(align)
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(align)
+    const mutations = new MutationObserver(align)
     const content = document.querySelector('.content-wrap')
     if (observer && content) observer.observe(content)
+    if (content) mutations.observe(content, { childList: true, subtree: true })
     const stop = () => {
       observer?.disconnect()
+      mutations.disconnect()
       window.removeEventListener('wheel', stop)
       window.removeEventListener('touchstart', stop)
       window.removeEventListener('keydown', stop)
@@ -173,11 +182,13 @@ function App() {
     window.addEventListener('wheel', stop, { passive: true })
     window.addEventListener('touchstart', stop, { passive: true })
     window.addEventListener('keydown', stop)
-    const timeout = window.setTimeout(stop, 2000)
+    const timeout = window.setTimeout(stop, 15000)
     return () => {
       window.cancelAnimationFrame(frame)
       window.clearTimeout(timeout)
+      window.clearTimeout(settle)
       observer?.disconnect()
+      mutations.disconnect()
       window.removeEventListener('wheel', stop)
       window.removeEventListener('touchstart', stop)
       window.removeEventListener('keydown', stop)

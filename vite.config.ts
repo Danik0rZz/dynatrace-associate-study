@@ -12,6 +12,9 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
+          // Guía y ficha de precisión: un chunk por bloque, descargado al abrirlo (src/data/guide-loader.ts).
+          const guide = id.match(/\/src\/data\/blocks\/([^/]+)\/(?:guide|precision)\.ts$/)
+          if (guide) return `guide-${guide[1]}`
           if (id.includes('/src/data/blocks/')) return 'content'
           if (id.includes('node_modules/react') || id.includes('node_modules/scheduler')) return 'react'
           return undefined

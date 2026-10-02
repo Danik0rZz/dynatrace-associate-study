@@ -15,17 +15,17 @@ describe('interfaz', () => {
     expect(screen.getAllByText(/1175|1\.175/).length).toBeGreaterThan(0)
   })
 
-  it('abre un bloque con su guía y sus botones de práctica por apartado', () => {
+  it('abre un bloque con su guía y sus botones de práctica por apartado', async () => {
     render(<App />)
     fireEvent.click(screen.getAllByRole('button', { name: /Notebooks & Dashboards/ })[0])
     expect(screen.getByRole('heading', { level: 1, name: 'Notebooks & Dashboards' })).toBeTruthy()
-    expect(screen.getAllByText('Practicar este apartado').length).toBeGreaterThan(5)
+    expect((await screen.findAllByText('Practicar este apartado')).length).toBeGreaterThan(5)
   })
 
-  it('responde una pregunta y abre la guía en el panel lateral', () => {
+  it('responde una pregunta y abre la guía en el panel lateral', async () => {
     render(<App />)
     fireEvent.click(screen.getAllByRole('button', { name: /Notebooks & Dashboards/ })[0])
-    fireEvent.click(screen.getAllByText('Practicar este apartado')[0])
+    fireEvent.click((await screen.findAllByText('Practicar este apartado'))[0])
     const hint = screen.getByText(/Selecciona (exactamente \d|la respuesta)/).textContent ?? ''
     const needed = Number(hint.match(/\d/)?.[0] ?? 1)
     const options = within(screen.getByRole('group', { name: 'Opciones de respuesta' })).getAllByRole(needed > 1 ? 'checkbox' : 'radio')
