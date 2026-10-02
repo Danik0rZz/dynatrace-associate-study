@@ -1192,3 +1192,52 @@ h3 { letter-spacing: -.025em; }
   .home-backup-tools .data-tool:hover { color: #fff; background: var(--teal-dark); border-color: var(--teal-dark); }
   .home-backup-tools .data-tool:focus-within { outline: 3px solid #0b5fa5; outline-offset: 2px; }
 }
+
+/* ——— Móvil: texto de 12 px como mínimo y zonas táctiles de 44 × 44 px (WCAG 2.5.5 / 2.5.8) ———
+   Se quedan como están, por decorativos: la marca «ASSOCIATE» (.brand-kicker), los separadores «/» y «|»
+   (.crumb-separator, .legend-divider) y el contenido de los nodos del lienzo del mapa, que React Flow escala con el zoom. */
+@media (max-width: 780px) {
+  /* Texto: navegación, migas y etiquetas. */
+  .nav-item, .breadcrumbs, .eyebrow, .panel-count, .hero-source-line, .card-label, .metric small, .orbit-center span,
+  .progress-card-footer span, .exam-ribbon p, .exam-links a, .module-number, .module-status, .module-focus span,
+  .module-score span, .module-score small, .term-chip, .objective-list span, .bucket-cell span, .bucket-cell small,
+  .pager-link small, .pager-top, .button-primary span, .button-outline span, .search-result-module { font-size: 12px; }
+  /* Texto: capítulo, apartados, tablas y fuentes. */
+  .chapter-stats span, .chapter-stats strong, .chapter-index a, .section-marker, .study-table-wrap th, .study-table-wrap td, .study-code small, .study-section-source-link span,
+  .source-kind, .source-url, .verification-note, .precision-facts-heading > span, .precision-facts-note,
+  .precision-facts-table th, .precision-facts-table td, .precision-facts-table tbody th, .precision-facts-table a,
+  .stats-table th, .stats-table thead th, .glossary-card button, .exam-ribbon p:not(.eyebrow), .chapter-outcomes > span:not(.eyebrow),
+  .objective-list li span { font-size: 12px; }
+  .inline-code { font-size: max(12px, .92em); }
+  .question-stimulus strong { font-size: 12px; }
+  /* Unidades del SVG: el gráfico móvil usa un lienzo de 340 de ancho, que se dibuja a unos 300 px. */
+  .score-chart-label { font-size: 15px; }
+  /* Texto: quiz y simulacro. */
+  .module-origin, .difficulty-pill, .bucket-pill, .type-pill, .flag-button, .option-key, .confidence-scale button, .confidence-hint,
+  .source-mini p:not(.eyebrow), .source-mini a, .source-mini span, .question-nav button, .question-nav small { font-size: 12px; }
+  /* Texto: mapa (fuera del lienzo) e inspector del bloque. */
+  .segmented-button span, .phase-chip, .canvas-legend span, .canvas-tip, .canvas-toggle-btn, .summary-card-label, .summary-card-data span,
+  .ring-content small, .inspector-eyebrow, .inspector-order, .inspector-status, .metric-label, .inspector-section-heading,
+  .inspector-term-pill, .inspector-objectives-list li, .inspector-btn-sub { font-size: 12px; }
+
+  /* Zonas táctiles de 44 px. Se amplía el alto con min-height (el aspecto apenas cambia). */
+  .skip-link, .nav-item, .button-primary, .button-outline, .button-quiet, .button-dark, .button-accent, .button-secondary, .text-button,
+  .section-practice, .pager-top, .confidence-scale button, .quiz-aside-details > summary, .phase-chip, .canvas-toggle-btn,
+  .inspector-btn, .inspector-btn-sub, .data-tool, select { min-height: 44px; }
+  .chapter-index a, .study-section-source-link, .exam-links a, .source-mini a, .glossary-card button { display: flex; align-items: center; min-height: 44px; }
+  .mastery-list label { display: flex; align-items: center; gap: 8px; min-height: 44px; }
+  .search-result a { min-height: 44px; align-content: center; }
+  /* «Marcar» amplía su zona táctil con un pseudo-elemento: así la fila de etiquetas no crece y la pregunta sigue cabiendo. */
+  .flag-button { position: relative; padding: 0 6px; }
+  .flag-button::after { content: ""; position: absolute; inset: -14px -4px; }
+  /* La barra conserva su alto de antes (58 px) aunque los botones pasen a 44 px. */
+  .quiz-footer { padding-top: 7px; padding-bottom: calc(7px + env(safe-area-inset-bottom)); }
+  .difficulty-pill, .bucket-pill { letter-spacing: .04em; padding-top: 3px; padding-bottom: 3px; }
+  /* Compensa los 12 px de etiquetas y pills recortando márgenes, para que la pregunta típica siga cabiendo. */
+  .question-card { padding-top: 10px; }
+  .question-card h2 { margin-top: 8px; }
+  .answer-hint { margin-bottom: 8px; }
+  .question-nav button { width: 44px; height: 44px; }
+  .inspector-close-btn { min-width: 44px; min-height: 44px; }
+  .react-flow__controls-button { width: 44px; height: 44px; }
+}
