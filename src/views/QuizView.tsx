@@ -5,6 +5,7 @@ import { InlineText } from '../components/InlineText'
 import { bucketLabels, difficultyLabels } from '../app/labels'
 import { modulesWithQuestions } from '../data/questions'
 import { scoreAttempt } from '../lib/progress'
+import { useQuizShortcuts } from '../app/useQuizShortcuts'
 
 export function QuizView({ session, question, index, selected, confidence, flagged, secondsLeft, feedbackVisible, onToggleAnswer, onConfidence, onSubmit, onNext, onToggleFlag, onOpenGuide, onBack, onJump, onReview }: { session: Session; question: Question; index: number; selected: string[]; confidence: Confidence; flagged: boolean; secondsLeft: number; feedbackVisible: boolean; onToggleAnswer: (id: string) => void; onConfidence: (value: Confidence) => void; onSubmit: () => void; onNext: () => void; onToggleFlag: () => void; onOpenGuide: () => void; onBack: () => void; onJump: (index: number) => void; onReview?: () => void }) {
   const mock = session.mode === 'mock'
@@ -12,6 +13,24 @@ export function QuizView({ session, question, index, selected, confidence, flagg
   const options = (session.optionOrderByQuestionId[question.id] ?? question.options.map((option) => option.id))
     .map((id) => question.options.find((option) => option.id === id)!)
   const moduleTitle = modulesWithQuestions.find((module) => module.id === question.moduleId)?.title ?? question.moduleId
+  const optionsLocked = feedbackVisible && !mock
+  const canSubmit = mock || selected.length === question.correctOptionIds.length
+  useQuizShortcuts({
+    choose: (position) => {
+      const option = options[position]
+      if (!option || optionsLocked) return false
+      onToggleAnswer(option.id)
+      return true
+    },
+    enter: () => {
+      if (optionsLocked) { onNext(); return true }
+      if (!canSubmit) return false
+      onSubmit()
+      return true
+    },
+    flag: onToggleFlag,
+  })
+  const lastKey = Math.min(options.length, 9)
   const minutes = Math.floor(secondsLeft / 60).toString().padStart(2, '0')
   const seconds = (secondsLeft % 60).toString().padStart(2, '0')
   return <div className="page-stack quiz-page">
@@ -22,6 +41,7 @@ export function QuizView({ session, question, index, selected, confidence, flagg
       {question.stimulus && <div className="question-stimulus"><strong>{question.stimulus.title}</strong>{question.stimulus.kind === 'table' ? <table><thead><tr>{question.stimulus.columns.map((column) => <th key={column}>{column}</th>)}</tr></thead><tbody>{question.stimulus.rows.map((row, rowIndex) => <tr key={rowIndex}>{row.map((cell, cellIndex) => <td key={cellIndex}>{cell}</td>)}</tr>)}</tbody></table> : question.stimulus.kind === 'code' ? <pre><code>{question.stimulus.content}</code></pre> : <p>{question.stimulus.content}</p>}</div>}
       <p className="answer-hint">{question.type === 'multiple' ? `Selecciona exactamente ${question.correctOptionIds.length} respuestas.` : 'Selecciona la respuesta más precisa.'}</p>
       <fieldset className="options-list"><legend className="sr-only">Opciones de respuesta</legend>{options.map((option, optionIndex) => { const isSelected = selected.includes(option.id); const isCorrect = question.correctOptionIds.includes(option.id); const showState = feedbackVisible && !mock; return <label className={`answer-option ${isSelected ? 'selected' : ''} ${showState && isCorrect ? 'correct' : ''} ${showState && isSelected && !isCorrect ? 'incorrect' : ''}`} key={option.id}><input type={question.type === 'multiple' ? 'checkbox' : 'radio'} name={question.id} checked={isSelected} onChange={() => onToggleAnswer(option.id)} disabled={showState} /><span className="option-key">{String.fromCharCode(65 + optionIndex)}</span><span className="option-copy"><InlineText text={option.text} /></span>{showState && isCorrect && <span className="option-state">✓</span>}{showState && isSelected && !isCorrect && <span className="option-state">×</span>}</label> })}</fieldset>
+      <p className="quiz-shortcuts">Teclado: <kbd>1</kbd>–<kbd>{lastKey}</kbd> o <kbd>A</kbd>–<kbd>{String.fromCharCode(64 + lastKey)}</kbd> {question.type === 'multiple' ? 'marcan o desmarcan una opción' : 'eligen opción'} · <kbd>Enter</kbd> {mock ? 'guarda y continúa' : 'comprueba o pasa a la siguiente'} · <kbd>M</kbd> marca la pregunta</p>
       {feedbackVisible && !mock && <Feedback question={question} result={result} selected={selected} onOpenGuide={onOpenGuide} />}
     </section><aside className="quiz-aside"><div className="quiz-aside-card"><p className="eyebrow">CONTROL DE SESIÓN</p><div className="confidence-label"><span>Confianza</span><strong>{confidence}/5</strong></div><div className="confidence-scale">{([1, 2, 3, 4, 5] as Confidence[]).map((value) => <button className={confidence === value ? 'active' : ''} key={value} onClick={() => onConfidence(value)} aria-label={`Confianza ${value}`}>{value}</button>)}</div><p className="confidence-hint">Se usa para priorizar el repaso.</p></div><div className="quiz-aside-card source-mini"><p className="eyebrow">FUENTE OFICIAL</p><p>Consulta la documentación para contrastar el criterio.</p>{question.sourceRefs.map((source) => <a href={source.url} target="_blank" rel="noreferrer" key={source.url}>{source.title} <span>↗</span></a>)}</div>{mock && <div className="quiz-aside-card question-nav"><p className="eyebrow">PREGUNTAS</p><div>{session.questionIds.map((id, questionIndex) => <button className={`${questionIndex === index ? 'active' : ''} ${questionIndex < index ? 'visited' : ''}`} key={id} onClick={() => onJump(questionIndex)}>{questionIndex + 1}</button>)}</div><small>Puedes volver a cualquier pregunta.</small></div>}</aside></div>
     <div className="quiz-footer"><button className="button-quiet" onClick={onBack} disabled={!mock || index === 0}>← Anterior</button><div className="quiz-footer-actions">{mock && onReview && index < session.questionIds.length - 1 && <button type="button" className="button-quiet" onClick={onReview}>Entregar…</button>}{feedbackVisible && !mock ? <button className="button-primary" onClick={onNext}>{index === session.questionIds.length - 1 ? 'Ver resultado' : 'Siguiente pregunta'} <span>→</span></button> : <button className="button-primary" onClick={onSubmit} disabled={!mock && selected.length !== question.correctOptionIds.length}>{mock ? (index === session.questionIds.length - 1 ? 'Revisar y entregar' : selected.length ? 'Guardar y continuar' : 'Omitir y continuar') : 'Comprobar respuesta'} <span>→</span></button>}</div></div>

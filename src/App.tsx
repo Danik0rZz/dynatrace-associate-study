@@ -1,4 +1,6 @@
-import { lazy, Suspense, useEffect, useRef, useState, type MouseEvent } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState, useSyncExternalStore, type MouseEvent } from 'react'
+import { DialogHost } from './components/Dialog'
+import { confirmDialog, isDialogOpen, subscribeDialogs } from './lib/dialogs'
 import { navItems } from './app/labels'
 import { HOME, useHashRouter, type Route } from './app/router'
 import { useStoredState } from './app/storage'
@@ -31,7 +33,7 @@ const MapView = lazy(() => import('./components/MapView').then((module) => ({ de
 
 const scrollToTop = () => { if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'auto' }) }
 
-const LEAVE_MOCK_MESSAGE = 'Tienes un simulacro en curso. Si sales, quedará guardado para reanudarlo, pero el tiempo seguirá corriendo. ¿Quieres salir?'
+const LEAVE_MOCK_MESSAGE = 'Tienes un simulacro en curso. Si sales, quedará guardado para reanudarlo, pero el tiempo seguirá corriendo.'
 
 function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useStoredState<boolean>('dynatrace-associate-sidebar-collapsed', false)
@@ -51,8 +53,27 @@ function App() {
    */
   const normalizeRoute = (next: Route): Route =>
     (next.view === 'quiz' && !study.session) || (next.view === 'mock' && !study.session && !study.savedMock) ? HOME : next
-  /** Salir de un simulacro en curso pide confirmación (también con «Atrás»); si se acepta, queda guardado para reanudarlo. */
-  const guard = (next: Route) => next.view === 'mock' || !study.mockInProgress || window.confirm(LEAVE_MOCK_MESSAGE)
+  /**
+   * Salir de un simulacro en curso pide confirmación (también con «Atrás»); si se acepta, queda guardado para reanudarlo.
+   * El diálogo es asíncrono y la guarda del router no: con un simulacro en curso la guarda cancela siempre (el router
+   * restaura la URL), abre el diálogo y, si se acepta, vuelve a navegar con el permiso concedido.
+   */
+  const leaveAllowed = useRef(false)
+  const guard = (next: Route) => {
+    if (next.view === 'mock' || !study.mockInProgress || leaveAllowed.current) return true
+    if (!isDialogOpen()) {
+      void confirmDialog({ title: '¿Salir del simulacro?', message: LEAVE_MOCK_MESSAGE, confirmLabel: 'Salir del simulacro', cancelLabel: 'Seguir en el simulacro' }).then((accepted) => {
+        if (!accepted) return
+        leaveAllowed.current = true
+        try {
+          go(next)
+        } finally {
+          leaveAllowed.current = false
+        }
+      })
+    }
+    return false
+  }
   const onRouteChange = (next: Route) => {
     if (next.view !== 'quiz' && next.view !== 'mock') study.close()
     if (next.moduleId) setSelectedModuleId(next.moduleId)
@@ -165,10 +186,13 @@ function App() {
   const inQuiz = view === 'quiz' || view === 'mock'
   // Versiones anteriores guardaban '1'/'0' en vez de true/false.
   const collapsed = Boolean(sidebarCollapsed)
+  const dialogOpen = useSyncExternalStore(subscribeDialogs, isDialogOpen, () => false)
   const breadcrumb = view === 'home' ? 'Study Lab' : navItems.find((item) => item.id === view)?.label ?? selectedModule.title
 
   return (
-    <div className={`app-shell ${collapsed ? 'sidebar-collapsed' : ''}`}>
+    <>
+    {/* Con un diálogo abierto, el resto de la app queda inerte (ni foco ni clics). */}
+    <div className={`app-shell ${collapsed ? 'sidebar-collapsed' : ''}`} inert={dialogOpen}>
       <a className="skip-link" href="#main-content" onClick={skipToContent}>Saltar al contenido</a>
       <Sidebar view={view} collapsed={collapsed} routeModule={routeModule} onToggle={() => setSidebarCollapsed((collapsed) => !collapsed)} onNavigate={navigate} onStartMock={startMock} onOpenModule={openModule} />
 
@@ -193,11 +217,13 @@ function App() {
           {view === 'practice' && <PracticeView selectedModuleId={route.moduleId ?? ''} done={practiceDone} onToggle={togglePractice} onOpenModule={openModule} />}
           {view === 'search' && <SearchView onOpen={(next) => { go(next) }} />}
           {view === 'stats' && <StatsView />}
-          {view === 'glossary' &&<GlossaryView search={glossarySearch} onSearch={setGlossarySearch} onOpenModule={openModule} />}
+          {view === 'glossary' && <GlossaryView search={glossarySearch} onSearch={setGlossarySearch} onOpenModule={openModule} />}
         </div>
       </main>
       {guide && <GuideDrawer guide={guide} inSession={Boolean(session && !study.done)} onClose={() => setGuide(null)} onOpenInGuide={() => goToSection(guide.moduleId, guide.sectionId)} />}
     </div>
+    <DialogHost />
+    </>
   )
 }
 

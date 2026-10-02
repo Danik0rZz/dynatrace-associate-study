@@ -174,17 +174,30 @@ describe('navegación con URL', () => {
     openAt('#/')
     fireEvent.click(nav().getByRole('button', { name: /Simulacro/ }))
     expect(window.location.hash).toBe('#/simulacro')
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
     act(() => { window.history.back() })
-    await waitFor(() => expect(confirm).toHaveBeenCalledTimes(1))
-    expect(screen.getByText('MODO SIMULACRO')).toBeTruthy()
+    const dialog = await screen.findByRole('alertdialog', { name: '¿Salir del simulacro?' })
+    expect(document.activeElement?.textContent).toBe('Seguir en el simulacro')
     await waitFor(() => expect(window.location.hash).toBe('#/simulacro'))
+    // Con el diálogo abierto, otro cambio de URL no abre un segundo diálogo y la URL vuelve a la del simulacro.
+    act(() => {
+      window.history.pushState(null, '', '#/glosario')
+      window.dispatchEvent(new PopStateEvent('popstate'))
+    })
+    expect(window.location.hash).toBe('#/simulacro')
+    expect(screen.getAllByRole('alertdialog')).toHaveLength(1)
+    await act(async () => { fireEvent.click(within(dialog).getByRole('button', { name: 'Seguir en el simulacro' })) })
+    expect(screen.queryByRole('alertdialog')).toBeNull()
+    expect(screen.getByText('MODO SIMULACRO')).toBeTruthy()
+    expect(window.location.hash).toBe('#/simulacro')
 
-    confirm.mockReturnValue(true)
     act(() => { window.history.back() })
-    await waitFor(() => expect(confirm).toHaveBeenCalledTimes(2))
+    await act(async () => { fireEvent.click(await screen.findByRole('button', { name: 'Salir del simulacro' })) })
     await waitFor(() => expect(screen.queryByText('MODO SIMULACRO')).toBeNull())
+    // Sale a la entrada anterior del historial (aquí, la que ha dejado el pushState de arriba).
+    expect(window.location.hash).toBe('#/glosario')
+    expect(heading()).toBe('Glosario')
     expect(screen.getByRole('region', { name: 'Simulacro sin terminar' })).toBeTruthy()
+    expect(screen.queryByRole('alertdialog')).toBeNull()
   })
 
   it('recargar con un simulacro guardado sigue ofreciendo «Reanudar»', () => {

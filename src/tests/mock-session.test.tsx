@@ -111,19 +111,22 @@ describe('simulacro robusto', () => {
     expect(window.localStorage.getItem(MOCK_SESSION_KEY)).toBeNull()
   })
 
-  it('salir de un simulacro en curso pide confirmación; cancelar lo mantiene y aceptar lo deja guardado', () => {
+  it('salir de un simulacro en curso pide confirmación; cancelar lo mantiene y aceptar lo deja guardado', async () => {
     render(<App />)
     fireEvent.click(nav().getByRole('button', { name: /Simulacro/ }))
     answerCurrent()
     fireEvent.click(screen.getByRole('button', { name: /Guardar y continuar/ }))
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
     fireEvent.click(nav().getByRole('button', { name: /Glosario/ }))
-    expect(confirm).toHaveBeenCalledTimes(1)
+    const dialog = screen.getByRole('alertdialog', { name: '¿Salir del simulacro?' })
+    await act(async () => { fireEvent.click(within(dialog).getByRole('button', { name: 'Seguir en el simulacro' })) })
+    expect(screen.queryByRole('alertdialog')).toBeNull()
     expect(screen.getByText('MODO SIMULACRO')).toBeTruthy()
     expect(screen.getByText('02')).toBeTruthy()
+    expect(window.location.hash).toBe('#/simulacro')
 
-    confirm.mockReturnValue(true)
     fireEvent.click(nav().getByRole('button', { name: /Glosario/ }))
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Salir del simulacro' })) })
+    expect(window.location.hash).toBe('#/glosario')
     expect(screen.queryByText('MODO SIMULACRO')).toBeNull()
     expect(stored()?.index).toBe(1)
     expect(screen.getByRole('region', { name: 'Simulacro sin terminar' }).textContent).toContain('1/60 respondidas')
