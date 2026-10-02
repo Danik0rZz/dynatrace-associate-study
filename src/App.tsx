@@ -6,6 +6,7 @@ import { useStudySession } from './app/useStudySession'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { GuideDrawer } from './components/GuideDrawer'
 import { Sidebar } from './components/Sidebar'
+import { ResumeMockPanel } from './components/ResumeMockPanel'
 import { StorageWarning } from './components/StorageWarning'
 import { allQuestions, modulesWithQuestions } from './data/questions'
 import { guideRefFor, type GuideRef } from './lib/guide-links'
@@ -13,6 +14,7 @@ import { dueQuestionIds, latestAttempt, loadProgress, saveProgress, type Progres
 import { ErrorHistoryView } from './views/ErrorHistoryView'
 import { GlossaryView } from './views/GlossaryView'
 import { HomeView } from './views/HomeView'
+import { MockReviewView } from './views/MockReviewView'
 import { ModuleView } from './views/ModuleView'
 import { PracticeView } from './views/PracticeView'
 import { QuizView } from './views/QuizView'
@@ -49,18 +51,40 @@ function App() {
   const overallScore = allQuestions.reduce((sum, question) => sum + (latestAttempt(progress, question.id)?.score ?? 0), 0)
   const overallPercentage = Math.round((attemptedQuestionCount / allQuestions.length) * 100)
 
+  /** Salir de un simulacro en curso pide confirmación; si se acepta, queda guardado para reanudarlo. */
+  const confirmLeave = () => !study.mockInProgress || window.confirm('Tienes un simulacro en curso. Si sales, quedará guardado para reanudarlo, pero el tiempo seguirá corriendo. ¿Quieres salir?')
+
   const navigate = (nextView: View) => {
+    if (!confirmLeave()) return
     scrollToTop()
     setView(nextView)
     if (nextView === 'practice') setSelectedModuleId('')
     study.close()
   }
 
-  const openModule = (moduleId: string) => {
+  const openModule = (moduleId: string): boolean => {
+    if (!confirmLeave()) return false
     scrollToTop()
     setSelectedModuleId(moduleId)
     setView('module')
     study.close()
+    return true
+  }
+
+  /** Simulacro: si hay uno en curso se vuelve a él; si hay uno guardado, se ofrece reanudarlo o descartarlo. */
+  const startMock = () => {
+    if (study.mockInProgress) {
+      setView('mock')
+      return
+    }
+    if (study.savedMock) {
+      scrollToTop()
+      setGuide(null)
+      study.close()
+      setView('mock')
+      return
+    }
+    study.startMock()
   }
 
   const openPractices = (moduleId: string) => {
@@ -69,8 +93,8 @@ function App() {
   }
 
   const goToSection = (moduleId: string, sectionId: string) => {
+    if (!openModule(moduleId)) return
     setGuide(null)
-    openModule(moduleId)
     setPendingAnchor(sectionId)
   }
 
@@ -124,7 +148,7 @@ function App() {
   return (
     <div className={`app-shell ${collapsed ? 'sidebar-collapsed' : ''}`}>
       <a className="skip-link" href="#main-content">Saltar al contenido</a>
-      <Sidebar view={view} collapsed={collapsed} routeModule={routeModule} onToggle={() => setSidebarCollapsed((collapsed) => !collapsed)} onNavigate={navigate} onStartMock={study.startMock} onOpenModule={openModule} />
+      <Sidebar view={view} collapsed={collapsed} routeModule={routeModule} onToggle={() => setSidebarCollapsed((collapsed) => !collapsed)} onNavigate={navigate} onStartMock={startMock} onOpenModule={openModule} />
 
       <main className="main-content" id="main-content" tabIndex={-1}>
         <header className="topbar">
@@ -133,11 +157,14 @@ function App() {
         </header>
 
         <StorageWarning />
+        {study.savedMock && !session && view !== 'mock' && <ResumeMockPanel mock={study.savedMock} discardLabel="Descartar" onResume={study.resumeMock} onDiscard={study.discardSavedMock} />}
         <div className={`content-wrap ${view === 'map' ? 'content-wrap-wide' : ''}`}>
-          {view === 'home' && <HomeView modules={modulesWithQuestions} progress={progress} overallPercentage={overallPercentage} overallScore={overallScore} attemptedQuestionCount={attemptedQuestionCount} onStart={() => openModule('platform')} onMap={() => navigate('map')} onMock={study.startMock} onOpenModule={openModule} />}
+          {view === 'home' && <HomeView modules={modulesWithQuestions} progress={progress} overallPercentage={overallPercentage} overallScore={overallScore} attemptedQuestionCount={attemptedQuestionCount} onStart={() => openModule('platform')} onMap={() => navigate('map')} onMock={startMock} onOpenModule={openModule} />}
           {view === 'map' && <ErrorBoundary fallback={(retry) => <div className="loading-state" role="alert">No se ha podido cargar el mapa. Comprueba la conexión y <button type="button" className="text-button" onClick={retry}>vuelve a intentarlo</button>, o recarga la página.</div>}><Suspense fallback={<p className="loading-state" role="status">Cargando el mapa…</p>}><MapView progress={progress} onOpenModule={openModule} onQuickQuiz={(id) => startModuleQuiz('quick', id)} onFullQuiz={(id) => startModuleQuiz('full', id)} onPractice={openPractices} /></Suspense></ErrorBoundary>}
           {view === 'module' && <ModuleView module={selectedModule} progress={progress} onOpenModule={openModule} onPracticeSection={study.startSection} onQuick={() => startModuleQuiz('quick')} onFull={() => startModuleQuiz('full')} onPractice={() => openPractices(selectedModule.id)} />}
-          {inQuiz && session && currentQuestion && !study.done && <QuizView session={session} question={currentQuestion} index={study.index} selected={study.answers[currentQuestion.id] ?? []} confidence={session.mode === 'mock' ? study.confidenceByQuestion[currentQuestion.id] ?? 3 : study.confidence} flagged={study.flagged.includes(currentQuestion.id)} secondsLeft={study.secondsLeft} feedbackVisible={study.feedbackQuestionId === currentQuestion.id} onToggleAnswer={(optionId) => study.toggleAnswer(currentQuestion, optionId)} onConfidence={(value) => study.setQuestionConfidence(currentQuestion, value)} onSubmit={study.submit} onNext={study.next} onToggleFlag={() => study.toggleFlag(currentQuestion.id)} onOpenGuide={() => openGuide(currentQuestion)} onBack={study.back} onJump={study.jump} />}
+          {view === 'mock' && !session && study.savedMock && <ResumeMockPanel mock={study.savedMock} discardLabel="Descartar y empezar uno nuevo" onResume={study.resumeMock} onDiscard={() => { study.discardSavedMock(); study.startMock() }} />}
+          {inQuiz && session && !study.done && study.reviewing && <MockReviewView session={session} answers={study.answers} flagged={study.flagged} secondsLeft={study.secondsLeft} onJump={study.jump} onBack={study.closeReview} onConfirm={study.complete} />}
+          {inQuiz && session && currentQuestion && !study.done && !study.reviewing && <QuizView session={session} question={currentQuestion} index={study.index} selected={study.answers[currentQuestion.id] ?? []} confidence={session.mode === 'mock' ? study.confidenceByQuestion[currentQuestion.id] ?? 3 : study.confidence} flagged={study.flagged.includes(currentQuestion.id)} secondsLeft={study.secondsLeft} feedbackVisible={study.feedbackQuestionId === currentQuestion.id} onToggleAnswer={(optionId) => study.toggleAnswer(currentQuestion, optionId)} onConfidence={(value) => study.setQuestionConfidence(currentQuestion, value)} onSubmit={study.submit} onNext={study.next} onToggleFlag={() => study.toggleFlag(currentQuestion.id)} onOpenGuide={() => openGuide(currentQuestion)} onBack={study.back} onJump={study.jump} onReview={study.openReview} />}
           {inQuiz && session && study.done && <SessionResult session={session} answers={study.answers} flagged={study.flagged} onHome={() => navigate('home')} onReview={() => dueQuestionIds(progress, allQuestions).length ? study.startReview() : navigate('review')} onRetry={study.retry} onOpenGuide={setGuide} onModule={() => session.moduleId && session.sectionId ? goToSection(session.moduleId, session.sectionId) : session.moduleId ? openModule(session.moduleId) : navigate('home')} />}
           {view === 'review' && !session && <ReviewView progress={progress} onStart={study.startReview} onOpenModule={openModule} />}
           {view === 'errors' && <ErrorHistoryView progress={progress} onOpenModule={openModule} onOpenGuide={openGuide} />}
