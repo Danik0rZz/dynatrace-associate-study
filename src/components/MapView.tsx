@@ -738,6 +738,10 @@ export function MapView({ progress, onOpenModule, onQuickQuiz, onFullQuiz, onPra
               </div>
             </div>
 
+            {/* En móvil el lienzo mantiene un ancho mínimo legible y se desplaza en horizontal dentro de este marco. */}
+            <p className="map-scroll-hint" id="map-scroll-hint">Desliza en horizontal para ver todo el mapa →</p>
+            <div className="map-canvas-frame">
+            <div className="map-canvas-scroll" tabIndex={0} role="region" aria-label="Lienzo del mapa de estudio" aria-describedby="map-scroll-hint">
             <div className="flow-canvas-wrapper">
               <ReactFlow
                 nodes={nodes}
@@ -762,6 +766,8 @@ export function MapView({ progress, onOpenModule, onQuickQuiz, onFullQuiz, onPra
                 <Background color="#cbd5e1" gap={28} size={1.2} />
                 <Controls className="custom-controls" showInteractive={false} />
               </ReactFlow>
+            </div>
+            </div>
             </div>
           </div>
 

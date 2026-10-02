@@ -221,6 +221,7 @@ h3 { letter-spacing: -.025em; }
 .canvas-toggle-btn:hover { background: #edf8f5; border-color: var(--teal); color: var(--ink); }
 
 .flow-canvas-wrapper { height: clamp(620px, calc(100vh - 280px), 880px); width: 100%; position: relative; background: #f8faf9; }
+@media (min-width: 781px) { .map-scroll-hint { display: none; } }
 
 /* Custom Phase Column Header Nodes */
 .map-phase-header-node {
@@ -923,8 +924,12 @@ h3 { letter-spacing: -.025em; }
 
 /* The app shell includes a persistent study rail. Start the tablet layout
    before the rail plus content column can exceed a laptop viewport. */
-@media (max-width: 1180px) {
+/* La barra estrecha solo aplica entre 781 y 1180 px: por debajo, la regla de 780 px (más débil en especificidad)
+   tiene que poder ponerla al 100 %. */
+@media (min-width: 781px) and (max-width: 1180px) {
   .app-shell:not(.sidebar-collapsed) .sidebar { width: 215px; flex-basis: 215px; }
+}
+@media (max-width: 1180px) {
   .content-wrap { padding: 35px 32px 65px; }
   .hero-grid { gap: 32px; }
   .module-detail-grid, .result-grid, .review-grid, .map-workspace-grid { grid-template-columns: 1fr; }
@@ -1001,6 +1006,29 @@ h3 { letter-spacing: -.025em; }
   .result-score { display: grid; gap: 0; }
   .result-score strong { font-size: 70px; }
   .search-field { min-width: 100%; }
+  /* Sin «colapsar» en móvil: la barra es una franja superior con la navegación desplazable. */
+  .sidebar-toggle { display: none; }
+  /* 16 px evita el zoom automático de iOS al enfocar un campo. */
+  input, select, textarea, .search-field input, .filter-field select { font-size: 16px; }
+  /* Una tabla ancha se desplaza dentro de su contenedor; nunca ensancha la página. */
+  .study-sections { grid-template-columns: minmax(0, 1fr); min-width: 0; }
+  .study-section, .precision-facts, .study-chapter { min-width: 0; }
+  .map-control-bar, .phase-filters, .canvas-header-bar, .canvas-legend { min-width: 0; }
+  /* En columna, «wrap» hace que la línea mida lo que su contenido más ancho: con una sola línea, los filtros miden
+     lo que la barra y se desplazan dentro de ella. */
+  .map-control-bar { flex-wrap: nowrap; }
+  .canvas-legend { flex-wrap: wrap; row-gap: 6px; }
+  /* El lienzo del mapa conserva un ancho legible y se desplaza en horizontal dentro de su marco. */
+  .map-canvas-frame { position: relative; }
+  .map-canvas-frame::after { content: ""; position: absolute; top: 0; right: 0; bottom: 0; width: 32px; background: linear-gradient(to right, rgba(248, 250, 249, 0), rgba(248, 250, 249, .95)); pointer-events: none; }
+  .map-canvas-scroll { overflow-x: auto; }
+  .map-canvas-scroll:focus-visible { outline: 3px solid #0b5fa5; outline-offset: -3px; }
+  .map-canvas-scroll .flow-canvas-wrapper { min-width: 720px; }
+  .map-scroll-hint { display: block; padding: 8px 16px 0; color: var(--ink-soft); font-size: 12px; }
+}
+/* En pantallas táctiles sin ratón no hay teclado físico: la ayuda de atajos sobra (los atajos siguen activos). */
+@media (hover: none) and (pointer: coarse) {
+  .quiz-shortcuts { display: none; }
 }
 
 /* Código en línea dentro de lecciones, preguntas y explicaciones */
