@@ -59,3 +59,12 @@
   .sv { margin-left: 0; max-width: 100%; }
   .sv-stage { padding: 10px 6px 4px; }
 }
+
+/* Móvil: texto de 12 px como mínimo y controles de 44 × 44 px. Este fichero se carga después de styles.css,
+   así que sus reglas de móvil van aquí. El texto dentro del SVG escala con la figura (se explica en el pie y los pasos). */
+@media (max-width: 780px) {
+  .sv-kind { font-size: 12px; letter-spacing: .08em; }
+  .sv-controls button { width: 44px; height: 44px; }
+  .sv-steps li button { min-height: 44px; font-size: 12px; }
+  .sv-steps li button span { width: 22px; height: 22px; flex-basis: 22px; font-size: 12px; }
+}

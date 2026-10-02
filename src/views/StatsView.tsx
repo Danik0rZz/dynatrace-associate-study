@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { useMediaQuery } from '../app/useMediaQuery'
 import { modulesWithQuestions } from '../data/questions'
 import { loadMockHistory, type MockHistoryEntry } from '../lib/mock-history'
 
@@ -38,9 +39,11 @@ export function StatsView() {
 
 /** Evolución de la nota en SVG: una línea con un punto por simulacro, en orden cronológico. */
 function ScoreChart({ history }: { history: MockHistoryEntry[] }) {
-  const width = 640
+  // En móvil el lienzo es más estrecho para que, al escalar, las etiquetas no bajen de 12 px.
+  const mobile = useMediaQuery('(max-width: 780px)')
+  const width = mobile ? 340 : 640
   const height = 220
-  const pad = { top: 16, right: 16, bottom: 30, left: 40 }
+  const pad = { top: 16, right: 16, bottom: 30, left: mobile ? 52 : 40 }
   const innerWidth = width - pad.left - pad.right
   const innerHeight = height - pad.top - pad.bottom
   const x = (index: number) => pad.left + (history.length === 1 ? innerWidth / 2 : index / (history.length - 1) * innerWidth)
@@ -53,7 +56,7 @@ function ScoreChart({ history }: { history: MockHistoryEntry[] }) {
       <desc id="score-chart-desc">{description}</desc>
       {[0, 50, 100].map((tick) => <g key={tick}><line x1={pad.left} x2={width - pad.right} y1={y(tick)} y2={y(tick)} className="score-chart-grid" /><text x={pad.left - 8} y={y(tick) + 4} textAnchor="end" className="score-chart-label">{tick}%</text></g>)}
       <polyline points={points} className="score-chart-line" />
-      {history.map((entry, index) => <circle key={`${entry.date}-${index}`}cx={x(index)} cy={y(entry.score)} r={4} className="score-chart-point" />)}
+      {history.map((entry, index) => <circle key={`${entry.date}-${index}`} cx={x(index)} cy={y(entry.score)} r={4} className="score-chart-point" />)}
       <text x={pad.left} y={height - 8} className="score-chart-label">Más antiguo</text>
       <text x={width - pad.right} y={height - 8} textAnchor="end" className="score-chart-label">Más reciente</text>
     </svg>
