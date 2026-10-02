@@ -113,8 +113,8 @@ export const mockExamIds = (questions: readonly Question[], progress: ProgressSt
 }
 
 /**
- * Repaso adaptativo: las `limit` preguntas pendientes más antiguas de la cola (`dueQuestionIds`),
- * en orden barajado. Con la cola vacía no hay repaso.
+ * Repaso adaptativo: las `limit` primeras preguntas de la cola (`dueQuestionIds`), es decir, las de más
+ * prioridad, en orden barajado. Con la cola vacía no hay repaso.
  */
 export const REVIEW_SESSION_SIZE = 24
 export const adaptiveReviewIds = (questions: readonly Question[], progress: ProgressState, limit = REVIEW_SESSION_SIZE, random: RandomSource = cryptoRandom): string[] =>

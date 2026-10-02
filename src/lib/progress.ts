@@ -70,22 +70,42 @@ const isSure = (attempt: Attempt): boolean => attempt.correct && attempt.confide
  * Criterio único de repaso. Una pregunta entra en el repaso al fallarla o al responderla con confianza ≤ 2,
  * y sale tras dos aciertos consecutivos con confianza ≥ 3. Lo nunca respondido no está en el repaso.
  */
-export const needsReview = (attempts: readonly Attempt[] | undefined): boolean => {
-  if (!attempts?.length) return false
+export const needsReview = (attempts: readonly Attempt[] | undefined): boolean => Boolean(reviewCause(attempts))
+
+/** Último intento «no seguro» que mantiene la pregunta en el repaso, o `undefined` si no está en él. */
+const reviewCause = (attempts: readonly Attempt[] | undefined): Attempt | undefined => {
+  if (!attempts?.length) return undefined
   let streak = 0
   for (let index = attempts.length - 1; index >= 0; index -= 1) {
-    if (!isSure(attempts[index])) return streak < REVIEW_EXIT_STREAK
+    if (!isSure(attempts[index])) return streak < REVIEW_EXIT_STREAK ? attempts[index] : undefined
     streak += 1
   }
-  return false
+  return undefined
 }
 
-/** Cola de repaso: las preguntas pendientes, de la respondida hace más tiempo a la más reciente. */
+/** Confianza (1-5) a partir de la cual un fallo es falsa seguridad. */
+export const FALSE_CONFIDENCE = 4
+
+/** 0 = falsa seguridad (fallo con confianza ≥ 4), 1 = resto de fallos, 2 = acierto con confianza ≤ 2. */
+const reviewPriority = (cause: Attempt): number => cause.correct ? 2 : cause.confidence >= FALSE_CONFIDENCE ? 0 : 1
+
+/**
+ * Cola de repaso, ordenada por prioridad:
+ * 1. falsa seguridad: fallos con confianza 4 o 5;
+ * 2. resto de fallos;
+ * 3. aciertos con confianza 1 o 2.
+ * El grupo lo decide el último intento «no seguro», el que mantiene la pregunta en la cola, no el último intento
+ * a secas: tras un fallo con confianza 5 y un acierto con confianza 4, la pregunta sigue en el grupo 1.
+ * Dentro de cada grupo, de la respondida hace más tiempo (según su último intento) a la más reciente.
+ */
 export const dueQuestionIds = (progress: ProgressState, questions: readonly Question[]): string[] =>
   questions
-    .filter((question) => needsReview(progress.attempts[question.id]))
-    .sort((left, right) => (latestAttempt(progress, left.id)?.timestamp ?? '').localeCompare(latestAttempt(progress, right.id)?.timestamp ?? ''))
-    .map((question) => question.id)
+    .flatMap((question) => {
+      const cause = reviewCause(progress.attempts[question.id])
+      return cause ? [{ id: question.id, priority: reviewPriority(cause), timestamp: latestAttempt(progress, question.id)?.timestamp ?? '' }] : []
+    })
+    .sort((left, right) => left.priority - right.priority || left.timestamp.localeCompare(right.timestamp))
+    .map((entry) => entry.id)
 export const moduleScore = (progress: ProgressState, questionIds: string[]): number => {
   const latest = questionIds.map((id) => latestAttempt(progress, id)).filter((attempt): attempt is Attempt => Boolean(attempt))
   return latest.length ? Math.round(latest.reduce((sum, attempt) => sum + attempt.score, 0) / latest.length * 100) : 0

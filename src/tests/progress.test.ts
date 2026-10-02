@@ -88,16 +88,44 @@ describe('criterio de repaso', () => {
     expect(due(answer(left, false, 5))).toBe(true)
   })
 
-  it('la cola va de la respuesta más antigua a la más reciente', () => {
-    const other = { ...singleQuestion, id: 'test-other' }
+  const at = (id: string, correct: boolean, confidence: Attempt['confidence'], timestamp: string): Attempt =>
+    ({ questionId: id, selectedOptionIds: [correct ? 'B' : 'A'], score: correct ? 1 : 0, correct, confidence, timestamp })
+  const questionsFor = (ids: string[]) => ids.map((id) => ({ ...singleQuestion, id }))
+
+  it('ordena por prioridad: falsa seguridad, resto de fallos y aciertos dudosos', () => {
+    // La falsa seguridad es la más reciente: si el orden fuera solo por antigüedad, saldría la última.
     const progress: ProgressState = {
       version: 3,
       attempts: {
-        'test-single': [{ questionId: 'test-single', selectedOptionIds: ['A'], score: 0, correct: false, confidence: 3, timestamp: '2026-10-02T10:00:00Z' }],
-        'test-other': [{ questionId: 'test-other', selectedOptionIds: ['A'], score: 0, correct: false, confidence: 3, timestamp: '2026-10-01T10:00:00Z' }],
+        'doubtful-hit': [at('doubtful-hit', true, 1, '2026-10-01T10:00:00Z')],
+        'plain-miss': [at('plain-miss', false, 2, '2026-10-01T11:00:00Z')],
+        'false-sure': [at('false-sure', false, 5, '2026-10-02T10:00:00Z')],
       },
     }
-    expect(dueQuestionIds(progress, [singleQuestion, other])).toEqual(['test-other', 'test-single'])
+    expect(dueQuestionIds(progress, questionsFor(['doubtful-hit', 'plain-miss', 'false-sure']))).toEqual(['false-sure', 'plain-miss', 'doubtful-hit'])
+  })
+
+  it('dentro de un mismo grupo, la respuesta más antigua va primero', () => {
+    const progress: ProgressState = {
+      version: 3,
+      attempts: {
+        'newer-miss': [at('newer-miss', false, 3, '2026-10-02T10:00:00Z')],
+        'older-miss': [at('older-miss', false, 3, '2026-10-01T10:00:00Z')],
+      },
+    }
+    expect(dueQuestionIds(progress, questionsFor(['newer-miss', 'older-miss']))).toEqual(['older-miss', 'newer-miss'])
+  })
+
+  it('el grupo lo decide el último intento no seguro: un fallo con confianza 5 y un acierto con confianza 4 sigue en falsa seguridad', () => {
+    const progress: ProgressState = {
+      version: 3,
+      attempts: {
+        'false-sure': [at('false-sure', false, 5, '2026-10-01T09:00:00Z'), at('false-sure', true, 4, '2026-10-02T12:00:00Z')],
+        'plain-miss': [at('plain-miss', false, 3, '2026-10-01T10:00:00Z')],
+      },
+    }
+    expect(needsReview(progress.attempts['false-sure'])).toBe(true)
+    expect(dueQuestionIds(progress, questionsFor(['plain-miss', 'false-sure']))).toEqual(['false-sure', 'plain-miss'])
   })
 })
 
