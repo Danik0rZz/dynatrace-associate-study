@@ -7,6 +7,7 @@ import { guideIndex } from '../data/guide-index'
 import { resetGuideCache } from '../data/guide-loader'
 import { modules } from '../data/modules'
 import { allQuestions } from '../data/questions'
+import { parsePlan } from '../lib/inventory'
 import { buildGuideIndex, buildQuestionIndex, renderIndexJson } from '../lib/light-index'
 
 const readProjectFile = async (path: string): Promise<string> => {
@@ -30,7 +31,9 @@ const openAt = (hash: string) => {
 
 describe('índices ligeros generados', () => {
   it('guide-index.json y question-index.json están al día (npm run inventario)', async () => {
-    expect(await readProjectFile('src/data/generated/guide-index.json')).toBe(renderIndexJson(buildGuideIndex(modules, studyGuide, precisionFacts)))
+    // Las fechas «Revisado» salen del plan: si cambia una fecha en docs/plan-apartados.csv, el índice queda desfasado.
+    const { rows: plan } = parsePlan(await readProjectFile('docs/plan-apartados.csv'))
+    expect(await readProjectFile('src/data/generated/guide-index.json')).toBe(renderIndexJson(buildGuideIndex(modules, studyGuide, precisionFacts, plan)))
     expect(await readProjectFile('src/data/generated/question-index.json')).toBe(renderIndexJson(buildQuestionIndex(allQuestions)))
   })
 

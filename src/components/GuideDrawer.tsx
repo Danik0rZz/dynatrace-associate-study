@@ -35,7 +35,7 @@ export function GuideDrawer({ guide, inSession, onClose, onOpenInGuide }: { guid
         {block.status === 'loading' && <p className="loading-state" role="status">Cargando el apartado…</p>}
         {block.status === 'error' && <p className="empty-state" role="alert">No se ha podido cargar la guía. Comprueba la conexión y vuelve a abrir el panel.</p>}
         {section && <StudySectionView section={section} moduleId={guide.moduleId} headingLevel="h3" anchor={false} />}
-        {sheet && <PrecisionFactsView factSheet={sheet} rows={precisionRowsFor(sheet, guide.evidence)} anchor={false} />}
+        {sheet && <PrecisionFactsView factSheet={sheet} moduleId={guide.moduleId} rows={precisionRowsFor(sheet, guide.evidence)} anchor={false} />}
         {block.status === 'ready' && !section && !sheet && <p className="empty-state">No se ha encontrado este apartado en la guía.</p>}
       </div>
       <footer className="guide-drawer-footer">

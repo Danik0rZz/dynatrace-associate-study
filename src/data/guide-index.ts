@@ -10,3 +10,7 @@ export const guideIndex = index as GuideIndex
 export const hasPrecisionSheet = (moduleId: string): boolean => Boolean(guideIndex[moduleId]?.precision)
 
 export const sectionIndexEntry = (moduleId: string, sectionId: string) => guideIndex[moduleId]?.sections.find((section) => section.id === sectionId)
+
+/** Fecha «Revisado» del apartado (o de la ficha de precisión) según el plan, si la tiene. */
+export const sectionReviewed = (moduleId: string, sectionId: string): string | undefined =>
+  sectionId === 'precision-facts' ? guideIndex[moduleId]?.precisionReviewed : sectionIndexEntry(moduleId, sectionId)?.reviewed

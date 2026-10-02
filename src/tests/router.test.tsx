@@ -156,7 +156,7 @@ describe('navegación con URL', () => {
 
   it('el índice incluye los hechos de precisión con su ruta', () => {
     openAt('#/dql')
-    const link = within(screen.getByRole('navigation', { name: 'Índice de la lección' })).getByRole('link', { name: 'Hechos de precisión' })
+    const link = within(screen.getByRole('navigation', { name: 'Índice de la lección' })).getByRole('link', { name: /^Hechos de precisión/ })
     fireEvent.click(link)
     expect(window.location.hash).toBe('#/dql/guia/precision-facts')
     return waitFor(() => expect(scrolled).toContain('precision-facts'))
