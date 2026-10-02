@@ -1,4 +1,5 @@
 import { guideIndex } from '../data/guide-index'
+import { canonicalSection } from '../data/section-aliases'
 import { modulesWithQuestions, questionIndex } from '../data/question-catalog'
 import type { Difficulty } from '../data/types'
 import { PRECISION_SECTION, questionIdsForSection, sectionTitle } from './guide-links'
@@ -63,6 +64,8 @@ export const sanitizeFilters = (raw: unknown): CustomFilters => {
     status: STATUSES.includes(data.status as CustomStatus) ? data.status as CustomStatus : DEFAULT_FILTERS.status,
     count: COUNT_OPTIONS.includes(data.count as number) ? data.count as number : DEFAULT_FILTERS.count,
   }
+  // Un filtro guardado puede llevar el id antiguo de un apartado fusionado: se lleva al superviviente.
+  if (filters.section !== null && filters.modules.length === 1) filters.section = canonicalSection(filters.modules[0], filters.section)
   // El apartado solo tiene sentido con un único bloque, y tiene que ser de ese bloque.
   if (filters.section !== null && !(filters.modules.length === 1 && isSectionOf(filters.modules[0], filters.section))) filters.section = null
   return filters
@@ -127,8 +130,9 @@ export const parseFilterParams = (query: string): Partial<CustomFilters> => {
   if (status) result.status = status
   const count = Number(params.get('n'))
   if (COUNT_OPTIONS.includes(count)) result.count = count
-  const section = params.get('apartado')
   const sectionModules = result.modules
+  const rawSection = params.get('apartado')
+  const section = rawSection && sectionModules?.length === 1 ? canonicalSection(sectionModules[0], rawSection) : rawSection
   if (section && sectionModules?.length === 1 && isSectionOf(sectionModules[0], section)) result.section = section
   return result
 }

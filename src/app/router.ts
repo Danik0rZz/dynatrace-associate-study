@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { hasPrecisionSheet, sectionIndexEntry } from '../data/guide-index'
+import { canonicalSection } from '../data/section-aliases'
 import { modulesWithQuestions } from '../data/question-catalog'
 import { formatFilterParams, parseFilterParams, type CustomFilters } from '../lib/custom-quiz'
 import { PRECISION_SECTION } from '../lib/guide-links'
@@ -70,7 +71,11 @@ export const parseRoute = (hash: string): Route | null => {
   if (view) return second === undefined ? { view } : null
   if (!isModule(first)) return null
   if (second === undefined) return { view: 'module', moduleId: first }
-  if (second === 'guia' && third !== undefined && isSection(first, third)) return { view: 'module', moduleId: first, sectionId: third }
+  if (second === 'guia' && third !== undefined) {
+    // Un apartado fusionado llega con su id antiguo: se lleva al superviviente (src/data/section-aliases.ts).
+    const sectionId = canonicalSection(first, third)
+    if (isSection(first, sectionId)) return { view: 'module', moduleId: first, sectionId }
+  }
   return null
 }
 
@@ -126,7 +131,9 @@ export function useHashRouter(options: RouterOptions) {
       // Una ruta desconocida lleva a inicio y su URL se sustituye por la de inicio.
       const parsed = parseRoute(hash)
       const next = handlers.current.normalize(parsed ?? HOME)
-      const corrected = !parsed || formatRoute(next) !== formatRoute(parsed)
+      // También se corrige una URL válida pero no canónica (p. ej., el id antiguo de un apartado fusionado): se
+      // sustituye por la de la ruta, sin crear entrada en el historial, como al abrir la app.
+      const corrected = !parsed || formatRoute(next) !== formatRoute(parsed) || formatRoute(parsed) !== hash
       const restore = (method: 'pushState' | 'replaceState') => window.history[method](window.history.state, '', current.current)
       if (formatRoute(next) === current.current) {
         if (corrected) restore('replaceState')
