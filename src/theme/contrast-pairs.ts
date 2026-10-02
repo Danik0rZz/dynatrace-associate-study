@@ -39,6 +39,14 @@ export const CONTRAST_PAIRS: ContrastPair[] = [
   text('feedback negativo', '--ink', '--feedback-surface'),
   text('texto de error / tarjeta', '--coral', '--paper'),
   text('texto de error / feedback negativo', '--coral', '--feedback-surface'),
+  // Feedback del quiz (encabezado «Correcto…» / «Incorrecto…», texto y foco del bloque).
+  text('feedback correcto: encabezado', '--teal-dark', '--surface-tint'),
+  text('feedback incorrecto: encabezado', '--difficulty-text-3', '--feedback-surface'),
+  text('feedback correcto: texto', '--ink', '--surface-tint'),
+  text('feedback: detalle', '--ink-soft', '--feedback-surface'),
+  text('feedback: contexto', '--muted', '--surface-tint'),
+  focus('foco del feedback correcto', '--focus-ring', '--surface-tint'),
+  focus('foco del feedback incorrecto', '--focus-ring', '--feedback-surface'),
   text('aviso de la guía', '--study-text-4', '--study-surface-4'),
   // Pills y estados del mapa.
   text('pill básica', '--difficulty-text', '--difficulty-surface'),
