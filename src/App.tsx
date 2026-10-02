@@ -10,6 +10,7 @@ import { useStudySession } from './app/useStudySession'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { GuideDrawer } from './components/GuideDrawer'
 import { Sidebar } from './components/Sidebar'
+import { Disclaimer } from './components/Disclaimer'
 import { MobileHeader, MobileMenu } from './components/MobileMenu'
 import { ResumeMockPanel } from './components/ResumeMockPanel'
 import { StorageWarning } from './components/StorageWarning'
@@ -195,7 +196,7 @@ function App() {
   const mobile = useMediaQuery('(max-width: 780px)')
   const collapsed = Boolean(sidebarCollapsed) && !mobile
   const dialogOpen = useSyncExternalStore(subscribeDialogs, isDialogOpen, () => false)
-  const breadcrumb = view === 'home' ? 'Study Lab' : navItems.find((item) => item.id === view)?.label ?? selectedModule.title
+  const breadcrumb = view === 'home' ? 'Inicio' : navItems.find((item) => item.id === view)?.label ?? selectedModule.title
   const menuVisible = mobile && menuOpen
   const sidebar = <Sidebar view={view} collapsed={collapsed} routeModule={routeModule} onToggle={() => setSidebarCollapsed((collapsed) => !collapsed)} onNavigate={navigate} onStartMock={startMock} onOpenModule={openModule} onBackupAction={() => setMenuOpen(false)} />
 
@@ -205,12 +206,13 @@ function App() {
     <div className={`app-shell ${collapsed ? 'sidebar-collapsed' : ''} ${inQuiz && session && !study.done ? 'session-active' : ''}`} inert={dialogOpen}>
       <a className="skip-link" href="#main-content" onClick={skipToContent}>Saltar al contenido</a>
       {/* En móvil, la misma barra lateral vive dentro del menú; en su lugar se ve la cabecera con el botón «Menú». */}
-      {mobile ? <MobileHeader title={breadcrumb} open={menuVisible} onOpen={() => setMenuOpen(true)} buttonRef={menuButtonRef} /> : sidebar}
+      {mobile ? <MobileHeader title={view === 'home' ? 'Study Lab' : breadcrumb}open={menuVisible} onOpen={() => setMenuOpen(true)} buttonRef={menuButtonRef} /> : sidebar}
       {menuVisible && <MobileMenu onClose={() => setMenuOpen(false)}>{sidebar}</MobileMenu>}
 
+      <div className="main-column">
       <main className="main-content" id="main-content" tabIndex={-1} ref={mainRef} inert={menuVisible}>
         <header className="topbar">
-          <nav className="breadcrumbs" aria-label="Ruta de navegación"><span>Dynatrace</span><span className="crumb-separator" aria-hidden="true">/</span><span>Associate Certification</span><span className="crumb-separator" aria-hidden="true">/</span><strong aria-current="page">{breadcrumb}</strong></nav>
+          <nav className="breadcrumbs" aria-label="Ruta de navegación"><span>Study Lab</span><span className="crumb-separator" aria-hidden="true">/</span><span>Associate Certification</span><span className="crumb-separator" aria-hidden="true">/</span><strong aria-current="page">{breadcrumb}</strong></nav>
           <div className="topbar-meta"><span className="status-pulse" aria-hidden="true" /> Progreso guardado localmente <span className="topbar-divider" aria-hidden="true" /> <span>{attemptedQuestionCount}/{allQuestions.length} revisadas</span></div>
         </header>
 
@@ -232,6 +234,9 @@ function App() {
           {view === 'glossary' && <GlossaryView search={glossarySearch} onSearch={setGlossarySearch} onOpenModule={openModule} />}
         </div>
       </main>
+      {/* Un único pie para todas las vistas, al final del contenido (no fijo). Inerte con el menú móvil abierto, como el <main>. */}
+      <footer className="site-footer" role="contentinfo" inert={menuVisible}><Disclaimer variant="short" /></footer>
+      </div>
       {guide && <GuideDrawer guide={guide} inSession={Boolean(session && !study.done)} onClose={() => setGuide(null)} onOpenInGuide={() => goToSection(guide.moduleId, guide.sectionId)} />}
     </div>
     <DialogHost />

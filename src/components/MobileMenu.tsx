@@ -6,7 +6,7 @@ export const MOBILE_MENU_ID = 'mobile-menu'
 /** Cabecera móvil (≤ 780 px): título de la vista y botón «Menú», que abre la barra lateral como panel. */
 export function MobileHeader({ title, open, onOpen, buttonRef }: { title: string; open: boolean; onOpen: () => void; buttonRef: RefObject<HTMLButtonElement | null> }) {
   return <header className="mobile-header">
-    <span className="brand-mark" aria-hidden="true">D</span>
+    <span className="brand-mark" aria-hidden="true">SL</span>
     <span className="mobile-header-title">{title}</span>
     <button ref={buttonRef} type="button" className="mobile-menu-button" aria-expanded={open} aria-controls={MOBILE_MENU_ID} aria-haspopup="dialog" onClick={onOpen}>
       <span aria-hidden="true">☰</span> Menú

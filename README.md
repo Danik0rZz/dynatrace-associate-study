@@ -1,4 +1,10 @@
-# Dynatrace Associate Study Lab
+# Study Lab · Preparación no oficial para Dynatrace Associate
+
+## Aviso
+
+Proyecto de estudio independiente y no oficial. No está afiliado, patrocinado ni respaldado por Dynatrace. Dynatrace y los nombres de sus productos son marcas de sus respectivos titulares y se citan solo para identificar el temario de la certificación. Las preguntas son de elaboración propia: no proceden del examen oficial. Contrasta siempre la información en docs.dynatrace.com y Dynatrace University.
+
+Código y contenido bajo licencia MIT (ver LICENSE). Dynatrace y las marcas relacionadas pertenecen a sus titulares; la licencia no cubre esas marcas.
 
 Aplicación local de preparación para Dynatrace Associate Certification. Está pensada como una herramienta de estudio trazable: el contenido está en español, pero conserva la terminología de la UI, los nombres de producto y la sintaxis DQL en inglés.
 
